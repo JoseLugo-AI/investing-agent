@@ -10,7 +10,7 @@ No coding experience needed. Just follow each step.
 - A Windows 10 or 11 computer
 - Internet connection
 - A Claude account (Pro or Max) — sign up at claude.ai
-- Alpaca paper trading keys (your dad will give you these)
+- Alpaca paper trading keys
 
 ---
 
@@ -27,7 +27,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-WebRequest -Uri "https:
 4. The script will:
    - Install WSL2 (Linux on Windows) — your computer may need to **restart**
    - If it restarts, open PowerShell as admin again and **run the same command**
-   - Ask you for Alpaca keys — type in what your dad gave you
+   - Ask you for Alpaca keys
    - Download and install everything else automatically
 
 ---
@@ -95,7 +95,7 @@ Every time you want to use the dashboard:
 
 ## Updating to the latest version
 
-If your dad pushes updates to the agent:
+If there are any updates to the agent:
 
 1. Open **Ubuntu**
 2. Type:
