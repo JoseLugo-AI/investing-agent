@@ -6,6 +6,11 @@ export interface AlpacaClient {
   getPositions: () => Promise<any[]>;
   getOrders: () => Promise<any[]>;
   getBars: (symbol: string, timeframe: string, limit?: number) => Promise<any[]>;
+  createOrder: (order: { symbol: string; qty: number; side: string; type: string; time_in_force: string; limit_price?: number }) => Promise<any>;
+  cancelOrder: (orderId: string) => Promise<void>;
+  getQuote: (symbol: string) => Promise<any>;
+  getPortfolioHistory: (period: string, timeframe: string) => Promise<any>;
+  searchAssets: (query: string) => Promise<any[]>;
 }
 
 export function createAlpacaClient(keyId: string, secretKey: string): AlpacaClient {
@@ -27,6 +32,17 @@ export function createAlpacaClient(keyId: string, secretKey: string): AlpacaClie
         bars.push(bar);
       }
       return bars;
+    },
+    createOrder: (order) => alpaca.createOrder(order),
+    cancelOrder: (orderId) => alpaca.cancelOrder(orderId),
+    getQuote: (symbol) => alpaca.getSnapshot(symbol),
+    getPortfolioHistory: (period, timeframe) =>
+      alpaca.getPortfolioHistory({ period, timeframe }),
+    searchAssets: async (query) => {
+      const assets = await alpaca.getAssets({ status: 'active', search: query });
+      return assets
+        .filter((a: any) => a.tradable)
+        .slice(0, 10);
     },
   };
 }
