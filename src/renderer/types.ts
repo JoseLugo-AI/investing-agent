@@ -141,7 +141,7 @@ export interface ElectronAPI {
   getWatchlist: () => Promise<WatchlistItem[]>;
   addToWatchlist: (symbol: string, name: string) => Promise<void>;
   removeFromWatchlist: (symbol: string) => Promise<void>;
-  validateOrder: (order: OrderRequest) => Promise<RiskCheck>;
+  validateOrder: (order: OrderRequest, currentPrice: number) => Promise<RiskCheck>;
   getRiskStatus: () => Promise<RiskStatus>;
   analyzePosition: (symbol: string) => Promise<AnalysisResult>;
   saveClaudeKey: (apiKey: string) => Promise<void>;

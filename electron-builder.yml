@@ -1,0 +1,33 @@
+appId: com.investing-agent.app
+productName: Investing Agent
+copyright: Copyright 2026
+
+directories:
+  buildResources: assets
+  output: release
+
+files:
+  - dist/**/*
+  - node_modules/**/*
+  - package.json
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: assets/icon.ico
+  artifactName: "${productName}-${version}-Setup.${ext}"
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: assets/icon.ico
+  uninstallerIcon: assets/icon.ico
+  deleteAppDataOnUninstall: false
+
+publish:
+  provider: github
+  owner: JoseLugo-AI
+  repo: investing-agent

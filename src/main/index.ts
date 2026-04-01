@@ -1,5 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
+import { log } from './logger';
+import { registerIpcHandlers } from './ipc-handlers';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -29,8 +31,14 @@ function createWindow(): void {
   });
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  log.info('Investing Agent starting up');
+  registerIpcHandlers();
+  createWindow();
+  log.info('Main window created');
+});
 
 app.on('window-all-closed', () => {
+  log.info('All windows closed, quitting');
   app.quit();
 });

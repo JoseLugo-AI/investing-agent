@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { Settings } from './components/Settings';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { api } from './api';
 
 export function App(): React.ReactElement {
@@ -33,26 +34,28 @@ export function App(): React.ReactElement {
   }
 
   return (
-    <div className="app">
-      <nav className="app-nav">
-        <button
-          className={view === 'dashboard' ? 'active' : ''}
-          onClick={() => setView('dashboard')}
-        >
-          Dashboard
-        </button>
-        <button
-          className={view === 'settings' ? 'active' : ''}
-          onClick={() => setView('settings')}
-        >
-          Settings
-        </button>
-      </nav>
-      {view === 'dashboard' ? (
-        <Dashboard />
-      ) : (
-        <Settings onSave={handleSaveKeys} onClear={handleClearKeys} hasKeys={true} />
-      )}
-    </div>
+    <ErrorBoundary>
+      <div className="app">
+        <nav className="app-nav">
+          <button
+            className={view === 'dashboard' ? 'active' : ''}
+            onClick={() => setView('dashboard')}
+          >
+            Dashboard
+          </button>
+          <button
+            className={view === 'settings' ? 'active' : ''}
+            onClick={() => setView('settings')}
+          >
+            Settings
+          </button>
+        </nav>
+        {view === 'dashboard' ? (
+          <Dashboard />
+        ) : (
+          <Settings onSave={handleSaveKeys} onClear={handleClearKeys} hasKeys={true} />
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }

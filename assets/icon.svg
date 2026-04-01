@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="32" fill="#0f1117"/>
+  <path d="M48 192 L88 128 L128 160 L168 96 L208 64" stroke="#4caf50" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="48" cy="192" r="6" fill="#4caf50"/>
+  <circle cx="88" cy="128" r="6" fill="#4caf50"/>
+  <circle cx="128" cy="160" r="6" fill="#4caf50"/>
+  <circle cx="168" cy="96" r="6" fill="#4caf50"/>
+  <circle cx="208" cy="64" r="6" fill="#4caf50"/>
+  <text x="128" y="230" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="24" font-weight="bold">IA</text>
+</svg>
