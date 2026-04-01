@@ -146,3 +146,131 @@ body {
 .empty-state {
   padding: 24px; text-align: center; color: var(--text-secondary); font-style: italic;
 }
+
+/* Order Form */
+.order-form {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  min-width: 320px;
+}
+.order-form-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+}
+.order-symbol { font-size: 18px; font-weight: 700; color: var(--accent); }
+.order-price { font-size: 16px; color: var(--text-primary); }
+.order-side-toggle, .order-type-toggle {
+  display: flex; gap: 4px; margin-bottom: 12px;
+}
+.order-side-toggle button, .order-type-toggle button {
+  flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--bg-tertiary); color: var(--text-secondary); cursor: pointer; font-size: 13px;
+}
+.order-side-toggle .buy.active { background: var(--green); color: white; border-color: var(--green); }
+.order-side-toggle .sell.active { background: var(--red); color: white; border-color: var(--red); }
+.order-type-toggle button.active { background: var(--accent); color: white; border-color: var(--accent); }
+.order-form input[type="number"] {
+  width: 100%; background: var(--bg-tertiary); border: 1px solid var(--border);
+  color: var(--text-primary); padding: 10px; border-radius: 6px; font-size: 14px; margin-bottom: 8px;
+}
+.order-tif { display: flex; gap: 16px; margin: 8px 0; color: var(--text-secondary); font-size: 13px; }
+.order-tif label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.order-estimate {
+  display: flex; justify-content: space-between; padding: 8px 0; margin: 8px 0;
+  border-top: 1px solid var(--border); color: var(--text-secondary); font-size: 14px;
+}
+.order-warning { color: var(--red); font-size: 12px; margin-bottom: 8px; }
+.order-actions { display: flex; gap: 8px; margin-top: 12px; }
+.order-actions .btn { flex: 1; }
+.btn-buy { background: var(--green); color: white; }
+.btn-sell { background: var(--red); color: white; }
+.btn-secondary { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border); }
+
+/* Confirmation Dialog */
+.dialog-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex;
+  align-items: center; justify-content: center; z-index: 100;
+}
+.dialog {
+  background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px;
+  padding: 24px; min-width: 380px; max-width: 420px;
+}
+.dialog h3 { margin-bottom: 16px; }
+.dialog-summary { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+.order-action.buy { color: var(--green); }
+.order-action.sell { color: var(--red); }
+.dialog-details { margin-bottom: 16px; }
+.dialog-row {
+  display: flex; justify-content: space-between; padding: 6px 0;
+  border-bottom: 1px solid var(--border); font-size: 14px;
+}
+.dialog-row span:first-child { color: var(--text-secondary); }
+.dialog-paper-badge {
+  text-align: center; background: #f59e0b22; color: #f59e0b;
+  padding: 6px; border-radius: 4px; margin-bottom: 16px; font-size: 12px; font-weight: 600;
+}
+.dialog-actions { display: flex; gap: 8px; }
+.dialog-actions .btn { flex: 1; }
+
+/* Portfolio Chart */
+.portfolio-chart { margin-bottom: 16px; }
+.portfolio-chart-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+}
+.portfolio-chart-header h2 { font-size: 16px; color: var(--text-secondary); }
+.period-selector { display: flex; gap: 4px; }
+.period-selector button {
+  background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-secondary);
+  padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;
+}
+.period-selector button.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+/* Watchlist */
+.watchlist-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.watchlist-header h2 { font-size: 16px; color: var(--text-secondary); }
+.watchlist-items { list-style: none; }
+.watchlist-item {
+  display: flex; align-items: center; gap: 12px; padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.watchlist-item-info { flex: 1; display: flex; flex-direction: column; }
+.watchlist-symbol { font-weight: 600; color: var(--accent); }
+.watchlist-name { font-size: 11px; color: var(--text-secondary); }
+.watchlist-price { font-size: 14px; font-weight: 500; min-width: 80px; text-align: right; }
+.watchlist-actions { display: flex; gap: 4px; }
+.btn-sm { padding: 4px 10px; font-size: 11px; border-radius: 4px; }
+
+/* Symbol Search */
+.symbol-search { position: relative; }
+.symbol-search input {
+  background: var(--bg-tertiary); border: 1px solid var(--border);
+  color: var(--text-primary); padding: 6px 10px; border-radius: 4px; font-size: 12px; width: 160px;
+}
+.search-results {
+  position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-secondary);
+  border: 1px solid var(--border); border-radius: 4px; max-height: 200px; overflow-y: auto;
+  list-style: none; z-index: 50;
+}
+.search-result-item {
+  display: flex; gap: 8px; padding: 6px 10px; cursor: pointer; font-size: 12px;
+}
+.search-result-item:hover { background: var(--bg-tertiary); }
+.search-symbol { font-weight: 600; color: var(--accent); min-width: 50px; }
+.search-name { color: var(--text-secondary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-exchange { color: var(--text-secondary); font-size: 10px; }
+
+/* Toast */
+.toast-container {
+  position: fixed; bottom: 16px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 200;
+}
+.toast {
+  background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 16px; min-width: 280px; animation: slideIn 0.2s ease-out;
+}
+.toast-success { border-left: 3px solid var(--green); }
+.toast-error { border-left: 3px solid var(--red); }
+.toast-info { border-left: 3px solid var(--accent); }
+.toast-title { display: block; font-size: 13px; margin-bottom: 2px; }
+.toast-message { display: block; font-size: 12px; color: var(--text-secondary); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
