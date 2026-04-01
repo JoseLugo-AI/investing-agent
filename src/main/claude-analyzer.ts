@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { runClaude } from './run-claude';
 
 export interface AnalysisResult {
   recommendation: 'buy' | 'sell' | 'hold';
@@ -122,31 +122,21 @@ export function parseAnalysisResponse(text: string): AnalysisResult {
 }
 
 /**
- * Call Claude API to analyze a position/symbol.
+ * Call Claude Code CLI to analyze a position/symbol.
+ * Uses the user's Claude subscription — no API key needed.
  */
 export async function analyzePosition(
-  apiKey: string,
   symbol: string,
   position: PositionData | null,
   account: AccountData,
   recentBars: BarData[]
 ): Promise<AnalysisResult> {
   try {
-    const client = new Anthropic({ apiKey });
     const prompt = buildAnalysisPrompt(symbol, position, account, recentBars);
 
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 500,
-      messages: [{ role: 'user', content: prompt }],
-    });
+    const stdout = await runClaude(prompt);
 
-    const text = response.content
-      .filter((block): block is { type: 'text'; text: string } => block.type === 'text')
-      .map(block => block.text)
-      .join('');
-
-    return parseAnalysisResponse(text);
+    return parseAnalysisResponse(stdout);
   } catch (err) {
     return {
       recommendation: 'hold',

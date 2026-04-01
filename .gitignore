@@ -4,6 +4,8 @@ out/
 *.env
 .env.*
 *.db
+*.db-shm
+*.db-wal
 .alpaca-keys
 .claude-key
 *.pem

@@ -1,15 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { analyzePosition, parseAnalysisResponse, buildAnalysisPrompt } from '../claude-analyzer';
 
-// Mock the Anthropic SDK
-const mockCreate = vi.fn();
-vi.mock('@anthropic-ai/sdk', () => {
-  return {
-    default: vi.fn().mockImplementation(() => ({
-      messages: { create: mockCreate },
-    })),
-  };
-});
+const mockRunClaude = vi.hoisted(() => vi.fn());
+vi.mock('../run-claude', () => ({ runClaude: mockRunClaude }));
+
+import { analyzePosition, parseAnalysisResponse, buildAnalysisPrompt } from '../claude-analyzer';
 
 describe('Claude Analyzer', () => {
   beforeEach(() => {
@@ -99,28 +93,21 @@ describe('Claude Analyzer', () => {
       });
 
       const result = parseAnalysisResponse(response);
-      // Invalid recommendation should fallback
       expect(result.recommendation).toBe('hold');
     });
   });
 
   describe('analyzePosition', () => {
-    it('calls Claude API and returns parsed result', async () => {
-      mockCreate.mockResolvedValue({
-        content: [{
-          type: 'text',
-          text: JSON.stringify({
-            recommendation: 'buy',
-            confidence: 'high',
-            reasoning: 'Bullish trend confirmed.',
-            risks: ['Earnings miss'],
-            timeframe: '2 weeks',
-          }),
-        }],
-      });
+    it('calls Claude Code CLI and returns parsed result', async () => {
+      mockRunClaude.mockResolvedValue(JSON.stringify({
+        recommendation: 'buy',
+        confidence: 'high',
+        reasoning: 'Bullish trend confirmed.',
+        risks: ['Earnings miss'],
+        timeframe: '2 weeks',
+      }));
 
       const result = await analyzePosition(
-        'test-api-key',
         'AAPL',
         { qty: '10', avg_entry_price: '172.50', current_price: '178.25', unrealized_pl: '57.50', side: 'long' },
         { portfolio_value: '100000.00', equity: '100000.00', cash: '82150.25' },
@@ -129,18 +116,14 @@ describe('Claude Analyzer', () => {
 
       expect(result.recommendation).toBe('buy');
       expect(result.confidence).toBe('high');
-      expect(mockCreate).toHaveBeenCalledTimes(1);
-      expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
-        model: expect.any(String),
-        max_tokens: expect.any(Number),
-      }));
+      expect(mockRunClaude).toHaveBeenCalledTimes(1);
+      expect(mockRunClaude).toHaveBeenCalledWith(expect.stringContaining('AAPL'));
     });
 
-    it('returns fallback on API error', async () => {
-      mockCreate.mockRejectedValue(new Error('API rate limited'));
+    it('returns fallback on CLI error', async () => {
+      mockRunClaude.mockRejectedValue(new Error('claude command not found'));
 
       const result = await analyzePosition(
-        'test-api-key',
         'AAPL',
         null,
         { portfolio_value: '100000.00', equity: '100000.00', cash: '82150.25' },

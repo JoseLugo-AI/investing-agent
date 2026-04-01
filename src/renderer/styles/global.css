@@ -16,13 +16,12 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
-  overflow: hidden;
 }
 
 .app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
   padding: 16px;
 }
 
@@ -274,3 +273,68 @@ body {
 .toast-title { display: block; font-size: 13px; margin-bottom: 2px; }
 .toast-message { display: block; font-size: 12px; color: var(--text-secondary); }
 @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* Agent Dashboard */
+.agent-dashboard { display: flex; flex-direction: column; gap: 16px; }
+
+.agent-header {
+  display: flex; align-items: center; gap: 16px; padding: 16px;
+  background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;
+}
+.agent-status-row { display: flex; align-items: center; gap: 8px; flex: 1; }
+.agent-status-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.agent-status-dot.running { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.agent-status-dot.stopped { background: var(--red); }
+.agent-status-text { font-weight: 600; font-size: 16px; }
+.agent-uptime { color: var(--text-secondary); font-size: 12px; }
+.agent-header-stats { display: flex; gap: 16px; color: var(--text-secondary); font-size: 13px; }
+.agent-error { background: #ef444422; color: var(--red); padding: 10px; border-radius: 6px; font-size: 13px; }
+
+/* Agent Grid */
+.agent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* Tier Allocation */
+.agent-tiers { display: flex; gap: 12px; }
+.agent-tier-card {
+  flex: 1; background: var(--bg-tertiary); border-radius: 6px; padding: 12px;
+}
+.agent-tier-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.agent-tier-badge { font-weight: 600; font-size: 13px; border-left: 3px solid; padding-left: 8px; }
+.agent-tier-target { color: var(--text-secondary); font-size: 11px; }
+.agent-tier-bar-bg {
+  height: 6px; background: var(--bg-primary); border-radius: 3px; margin-bottom: 8px; overflow: hidden;
+}
+.agent-tier-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; }
+.agent-tier-stats { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); }
+.agent-tier-available { color: var(--green); }
+
+/* Activity Feed */
+.agent-activity-feed { max-height: 400px; overflow-y: auto; }
+.agent-activity-item {
+  display: flex; align-items: center; gap: 8px; padding: 6px 0;
+  border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.agent-activity-time { color: var(--text-secondary); min-width: 70px; font-family: monospace; }
+.agent-activity-type { font-weight: 700; min-width: 55px; font-size: 10px; }
+.agent-activity-tier { font-weight: 600; font-size: 10px; min-width: 30px; }
+.agent-activity-symbol { color: var(--accent); font-weight: 600; min-width: 45px; }
+.agent-activity-summary { color: var(--text-primary); flex: 1; }
+
+/* Trade Log */
+.agent-trade-log { max-height: 400px; overflow-y: auto; }
+.agent-trade-expanded td { padding: 0 !important; }
+.agent-trade-reasoning {
+  padding: 12px 16px; background: var(--bg-tertiary); font-size: 12px;
+  line-height: 1.5; color: var(--text-primary);
+}
+.agent-trade-risks { margin-top: 6px; color: var(--text-secondary); }
+.agent-trade-order-id { margin-top: 6px; color: var(--text-secondary); font-family: monospace; font-size: 11px; }
+
+/* Next Scans */
+.agent-next-scans {
+  display: flex; gap: 16px; padding: 8px 12px;
+  background: var(--bg-secondary); border-radius: 6px; font-size: 11px; color: var(--text-secondary);
+}
+.agent-next-scan { text-transform: capitalize; }

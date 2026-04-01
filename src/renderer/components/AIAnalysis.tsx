@@ -28,11 +28,6 @@ export function AIAnalysis({ symbol }: Props): React.ReactElement {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasKey, setHasKey] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    api.hasClaudeKey().then(setHasKey).catch(() => setHasKey(false));
-  }, []);
 
   // Reset analysis when symbol changes
   useEffect(() => {
@@ -59,15 +54,6 @@ export function AIAnalysis({ symbol }: Props): React.ReactElement {
       <div className="ai-analysis">
         <h3>AI Analysis</h3>
         <p className="ai-placeholder">Select a symbol to get AI-powered analysis</p>
-      </div>
-    );
-  }
-
-  if (hasKey === false) {
-    return (
-      <div className="ai-analysis">
-        <h3>AI Analysis</h3>
-        <p className="ai-placeholder">Configure your Claude API key in Settings to enable AI analysis</p>
       </div>
     );
   }

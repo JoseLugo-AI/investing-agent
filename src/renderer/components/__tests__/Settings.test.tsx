@@ -1,15 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { Settings } from '../Settings';
-
-vi.mock('../../api', () => ({
-  api: {
-    hasClaudeKey: vi.fn(() => Promise.resolve(false)),
-    saveClaudeKey: vi.fn(() => Promise.resolve()),
-    clearClaudeKey: vi.fn(() => Promise.resolve()),
-  },
-}));
 
 describe('Settings', () => {
   it('renders API key inputs', () => {
@@ -38,11 +30,9 @@ describe('Settings', () => {
     expect(screen.getByText('Connected to Alpaca Paper Trading')).toBeDefined();
   });
 
-  it('shows Claude API key input', async () => {
+  it('shows Claude connected via Claude Code', () => {
     render(<Settings onSave={vi.fn()} onClear={vi.fn()} hasKeys={true} />);
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText('Claude API Key (sk-ant-...)')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Claude AI connected via Claude Code')).toBeInTheDocument();
   });
 
   it('shows risk limits section', () => {

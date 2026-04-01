@@ -149,6 +149,54 @@ export interface ElectronAPI {
   clearClaudeKey: () => Promise<void>;
 }
 
+// Agent types (frontend versions)
+export type TierId = 'conservative' | 'moderate' | 'aggressive';
+
+export interface TierAllocation {
+  id: TierId;
+  label: string;
+  target_pct: number;
+  target_value: number;
+  current_value: number;
+  available: number;
+  position_count: number;
+}
+
+export interface AgentStatus {
+  running: boolean;
+  started_at: string | null;
+  tiers: TierAllocation[];
+  next_scans: { tier_id: TierId; at: string }[];
+  total_trades: number;
+  total_analyses: number;
+}
+
+export interface AgentActivity {
+  id: number;
+  type: string;
+  tier_id: TierId | null;
+  symbol: string | null;
+  summary: string;
+  details: string | null;
+  created_at: string;
+}
+
+export interface AgentTrade {
+  id: number;
+  analysis_id: number;
+  tier_id: TierId;
+  symbol: string;
+  action: string;
+  reason: string;
+  qty: number | null;
+  price: number | null;
+  order_id: string | null;
+  created_at: string;
+  analysis_reasoning: string | null;
+  analysis_confidence: string | null;
+  analysis_risks: string[];
+}
+
 declare global {
   interface Window {
     api: ElectronAPI;

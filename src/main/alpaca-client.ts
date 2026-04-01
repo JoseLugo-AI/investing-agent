@@ -29,9 +29,24 @@ export function createAlpacaClient(keyId: string, secretKey: string, paper: bool
     getOrders: () => alpaca.getOrders({ status: 'all', limit: 20, direction: 'desc' }),
     getBars: async (symbol: string, timeframe: string, limit = 100) => {
       const bars: any[] = [];
-      const iter = alpaca.getBarsV2(symbol, { timeframe, limit });
+      // getBarsV2 needs explicit start date; no end date to avoid SIP restrictions
+      const start = new Date();
+      start.setDate(start.getDate() - 60);
+      const iter = alpaca.getBarsV2(symbol, {
+        timeframe,
+        start: start.toISOString(),
+        limit: 10000,
+        feed: 'iex',
+      });
       for await (const bar of iter) {
-        bars.push(bar);
+        bars.push({
+          t: bar.Timestamp,
+          o: bar.OpenPrice,
+          h: bar.HighPrice,
+          l: bar.LowPrice,
+          c: bar.ClosePrice,
+          v: bar.Volume,
+        });
       }
       return bars;
     },

@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { api } from '../api';
+import React, { useState } from 'react';
 
 interface Props {
   onSave: (keyId: string, secretKey: string) => void;
@@ -10,32 +9,10 @@ interface Props {
 export function Settings({ onSave, onClear, hasKeys }: Props): React.ReactElement {
   const [keyId, setKeyId] = useState('');
   const [secretKey, setSecretKey] = useState('');
-  const [claudeKey, setClaudeKey] = useState('');
-  const [hasClaudeKey, setHasClaudeKey] = useState(false);
-  const [claudeSaved, setClaudeSaved] = useState(false);
-
-  useEffect(() => {
-    api.hasClaudeKey().then(setHasClaudeKey).catch(() => {});
-  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (keyId && secretKey) onSave(keyId, secretKey);
-  };
-
-  const handleSaveClaude = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!claudeKey) return;
-    await api.saveClaudeKey(claudeKey);
-    setHasClaudeKey(true);
-    setClaudeKey('');
-    setClaudeSaved(true);
-    setTimeout(() => setClaudeSaved(false), 3000);
-  };
-
-  const handleClearClaude = async () => {
-    await api.clearClaudeKey();
-    setHasClaudeKey(false);
   };
 
   return (
@@ -72,30 +49,9 @@ export function Settings({ onSave, onClear, hasKeys }: Props): React.ReactElemen
       )}
 
       <h2>Claude AI Analysis</h2>
-      {hasClaudeKey ? (
-        <div className="settings-connected">
-          <p className="connected-badge">Claude API key configured</p>
-          {claudeSaved && <p className="saved-badge">Saved!</p>}
-          <button className="btn btn-danger" onClick={handleClearClaude}>
-            Remove Claude Key
-          </button>
-        </div>
-      ) : (
-        <form onSubmit={handleSaveClaude} className="settings-form">
-          <p className="settings-hint">
-            Get your API key at console.anthropic.com -- enables AI-powered trade analysis
-          </p>
-          <input
-            type="password"
-            placeholder="Claude API Key (sk-ant-...)"
-            value={claudeKey}
-            onChange={(e) => setClaudeKey(e.target.value)}
-          />
-          <button type="submit" className="btn btn-primary" disabled={!claudeKey}>
-            Save Claude Key
-          </button>
-        </form>
-      )}
+      <div className="settings-connected">
+        <p className="connected-badge">Claude AI connected via Claude Code</p>
+      </div>
 
       <h2>Risk Limits</h2>
       <div className="settings-risk-info">

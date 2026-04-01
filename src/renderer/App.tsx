@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { Settings } from './components/Settings';
+import { AgentDashboard } from './components/AgentDashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { api } from './api';
 
 export function App(): React.ReactElement {
   const [hasKeys, setHasKeys] = useState<boolean | null>(null);
-  const [view, setView] = useState<'dashboard' | 'settings'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'agent' | 'settings'>('dashboard');
 
   useEffect(() => {
     api.hasApiKeys().then(setHasKeys);
@@ -44,17 +45,21 @@ export function App(): React.ReactElement {
             Dashboard
           </button>
           <button
+            className={view === 'agent' ? 'active' : ''}
+            onClick={() => setView('agent')}
+          >
+            Agent
+          </button>
+          <button
             className={view === 'settings' ? 'active' : ''}
             onClick={() => setView('settings')}
           >
             Settings
           </button>
         </nav>
-        {view === 'dashboard' ? (
-          <Dashboard />
-        ) : (
-          <Settings onSave={handleSaveKeys} onClear={handleClearKeys} hasKeys={true} />
-        )}
+        {view === 'dashboard' && <Dashboard />}
+        {view === 'agent' && <AgentDashboard />}
+        {view === 'settings' && <Settings onSave={handleSaveKeys} onClear={handleClearKeys} hasKeys={true} />}
       </div>
     </ErrorBoundary>
   );

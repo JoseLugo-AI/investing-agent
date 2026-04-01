@@ -5,19 +5,17 @@ import '@testing-library/jest-dom';
 import { AIAnalysis } from '../AIAnalysis';
 
 const mockAnalyzePosition = vi.fn();
-const mockHasClaudeKey = vi.fn();
 
 vi.mock('../../api', () => ({
   api: {
     analyzePosition: (...args: any[]) => mockAnalyzePosition(...args),
-    hasClaudeKey: (...args: any[]) => mockHasClaudeKey(...args),
+    hasClaudeKey: vi.fn(() => Promise.resolve(true)),
   },
 }));
 
 describe('AIAnalysis', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockHasClaudeKey.mockResolvedValue(true);
   });
 
   it('shows prompt to select symbol when none selected', () => {
@@ -72,13 +70,4 @@ describe('AIAnalysis', () => {
     });
   });
 
-  it('shows setup prompt when no Claude key configured', async () => {
-    mockHasClaudeKey.mockResolvedValue(false);
-
-    render(<AIAnalysis symbol="AAPL" />);
-
-    await waitFor(() => {
-      expect(screen.getByText(/configure.*claude/i)).toBeInTheDocument();
-    });
-  });
 });

@@ -1,4 +1,4 @@
-import type { Account, Position, Order, Bar, OrderRequest, Quote, PortfolioHistory, Asset, WatchlistItem, RiskCheck, RiskStatus, AnalysisResult } from './types';
+import type { Account, Position, Order, Bar, OrderRequest, Quote, PortfolioHistory, Asset, WatchlistItem, RiskCheck, RiskStatus, AnalysisResult, AgentStatus, AgentActivity, AgentTrade, TierAllocation } from './types';
 
 const isElectron = typeof window !== 'undefined' && !!window.api;
 
@@ -55,6 +55,13 @@ const webApi = {
   saveClaudeKey: async (_apiKey: string) => { /* no-op in web mode */ },
   hasClaudeKey: () => get<boolean>('/api/has-claude-key'),
   clearClaudeKey: async () => { /* no-op in web mode */ },
+  // Agent
+  getAgentStatus: () => get<AgentStatus>('/api/agent/status'),
+  startAgent: () => post<void>('/api/agent/start'),
+  stopAgent: () => post<void>('/api/agent/stop'),
+  getAgentActivity: (limit = 50, offset = 0) => get<AgentActivity[]>(`/api/agent/activity?limit=${limit}&offset=${offset}`),
+  getAgentTrades: (limit = 20, offset = 0) => get<AgentTrade[]>(`/api/agent/trades?limit=${limit}&offset=${offset}`),
+  getAgentTiers: () => get<TierAllocation[]>('/api/agent/tiers'),
 };
 
 // Electron API (IPC-based)
@@ -82,6 +89,13 @@ const electronApi = {
   saveClaudeKey: (apiKey: string) => window.api.saveClaudeKey(apiKey),
   hasClaudeKey: () => window.api.hasClaudeKey(),
   clearClaudeKey: () => window.api.clearClaudeKey(),
+  // Agent (always uses HTTP even in Electron — agent runs server-side)
+  getAgentStatus: () => get<AgentStatus>('/api/agent/status'),
+  startAgent: () => post<void>('/api/agent/start'),
+  stopAgent: () => post<void>('/api/agent/stop'),
+  getAgentActivity: (limit = 50, offset = 0) => get<AgentActivity[]>(`/api/agent/activity?limit=${limit}&offset=${offset}`),
+  getAgentTrades: (limit = 20, offset = 0) => get<AgentTrade[]>(`/api/agent/trades?limit=${limit}&offset=${offset}`),
+  getAgentTiers: () => get<TierAllocation[]>('/api/agent/tiers'),
 };
 
 export const api = isElectron ? electronApi : webApi;
