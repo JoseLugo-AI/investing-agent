@@ -4,6 +4,7 @@ import { Dashboard } from '../Dashboard';
 import accountFixture from '../../../../test/fixtures/account.json';
 import positionsFixture from '../../../../test/fixtures/positions.json';
 import ordersFixture from '../../../../test/fixtures/orders.json';
+import portfolioHistoryFixture from '../../../../test/fixtures/portfolio-history.json';
 
 vi.mock('../../api', () => ({
   api: {
@@ -12,6 +13,14 @@ vi.mock('../../api', () => ({
     getOrders: vi.fn(() => Promise.resolve(ordersFixture)),
     getBars: vi.fn(() => Promise.resolve([])),
     hasApiKeys: vi.fn(() => Promise.resolve(true)),
+    getPortfolioHistory: vi.fn(() => Promise.resolve(portfolioHistoryFixture)),
+    getWatchlist: vi.fn(() => Promise.resolve([])),
+    getQuote: vi.fn(() => Promise.resolve({ symbol: 'AAPL', last: { price: 178.25, size: 100, timestamp: '' }, bid: { price: 0, size: 0 }, ask: { price: 0, size: 0 } })),
+    searchAssets: vi.fn(() => Promise.resolve([])),
+    createOrder: vi.fn(() => Promise.resolve({ status: 'accepted' })),
+    cancelOrder: vi.fn(() => Promise.resolve()),
+    addToWatchlist: vi.fn(() => Promise.resolve()),
+    removeFromWatchlist: vi.fn(() => Promise.resolve()),
   },
 }));
 
@@ -23,6 +32,16 @@ vi.mock('lightweight-charts', () => ({
     applyOptions: vi.fn(),
     remove: vi.fn(),
   })),
+}));
+
+vi.mock('recharts', () => ({
+  ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
+  LineChart: ({ children }: any) => <div>{children}</div>,
+  Line: () => null,
+  XAxis: () => null,
+  YAxis: () => null,
+  Tooltip: () => null,
+  CartesianGrid: () => null,
 }));
 
 describe('Dashboard', () => {

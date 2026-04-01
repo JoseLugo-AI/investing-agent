@@ -5,8 +5,13 @@ import { PositionsTable } from './PositionsTable';
 import { OrdersTable } from './OrdersTable';
 import { PriceChart } from './PriceChart';
 import { StatusBar } from './StatusBar';
+import { PortfolioChart } from './PortfolioChart';
+import { Watchlist } from './Watchlist';
+import { OrderForm } from './OrderForm';
+import { OrderConfirmDialog } from './OrderConfirmDialog';
+import { ToastContainer, useToast } from './Toast';
 import { POLL_INTERVAL_MS } from '@shared/constants';
-import type { Account, Position, Order, Bar } from '../types';
+import type { Account, Position, Order, Bar, OrderRequest } from '../types';
 
 export function Dashboard(): React.ReactElement {
   const [account, setAccount] = useState<Account | null>(null);
@@ -17,6 +22,12 @@ export function Dashboard(): React.ReactElement {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
+
+  const [orderSymbol, setOrderSymbol] = useState<string | null>(null);
+  const [orderPrice, setOrderPrice] = useState<number>(0);
+  const [pendingOrder, setPendingOrder] = useState<OrderRequest | null>(null);
+
+  const { toasts, addToast } = useToast();
 
   const fetchData = useCallback(async () => {
     try {
@@ -48,10 +59,35 @@ export function Dashboard(): React.ReactElement {
     api.getBars(selectedSymbol, '1Hour').then(setBars).catch(() => setBars([]));
   }, [selectedSymbol]);
 
+  const handleTrade = (symbol: string, lastPrice: number) => {
+    setOrderSymbol(symbol);
+    setOrderPrice(lastPrice);
+  };
+
+  const handleOrderSubmit = (order: OrderRequest) => {
+    setPendingOrder(order);
+  };
+
+  const handleOrderConfirm = async () => {
+    if (!pendingOrder) return;
+    try {
+      const result = await api.createOrder(pendingOrder);
+      addToast({ type: 'success', title: 'Order Placed', message: `${pendingOrder.side.toUpperCase()} ${pendingOrder.qty} ${pendingOrder.symbol} — ${result.status}` });
+      setPendingOrder(null);
+      setOrderSymbol(null);
+      fetchData();
+    } catch (err) {
+      addToast({ type: 'error', title: 'Order Failed', message: err instanceof Error ? err.message : 'Unknown error' });
+      setPendingOrder(null);
+    }
+  };
+
   return (
     <div className="dashboard">
       <StatusBar connected={connected} lastUpdated={lastUpdated} error={error} />
       <AccountSummary account={account} />
+      <PortfolioChart />
+
       <div className="dashboard-grid">
         <div className="dashboard-panel">
           <h2>Positions</h2>
@@ -61,10 +97,39 @@ export function Dashboard(): React.ReactElement {
           <PriceChart symbol={selectedSymbol} bars={bars} />
         </div>
       </div>
-      <div className="dashboard-panel">
-        <h2>Recent Orders</h2>
-        <OrdersTable orders={orders} />
+
+      <div className="dashboard-grid">
+        <div className="dashboard-panel">
+          <h2>Recent Orders</h2>
+          <OrdersTable orders={orders} />
+        </div>
+        <div className="dashboard-panel">
+          <Watchlist onTrade={handleTrade} />
+        </div>
       </div>
+
+      {orderSymbol && !pendingOrder && (
+        <div className="dialog-overlay">
+          <OrderForm
+            symbol={orderSymbol}
+            lastPrice={orderPrice}
+            buyingPower={account ? parseFloat(account.buying_power) : 0}
+            onSubmit={handleOrderSubmit}
+            onCancel={() => setOrderSymbol(null)}
+          />
+        </div>
+      )}
+
+      {pendingOrder && (
+        <OrderConfirmDialog
+          order={pendingOrder}
+          lastPrice={orderPrice}
+          onConfirm={handleOrderConfirm}
+          onCancel={() => setPendingOrder(null)}
+        />
+      )}
+
+      <ToastContainer toasts={toasts} />
     </div>
   );
 }
