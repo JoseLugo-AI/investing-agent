@@ -1,9 +1,24 @@
 import { ipcMain } from 'electron';
+import path from 'path';
 import { createAlpacaClient, AlpacaClient } from './alpaca-client';
 import { saveKeys, loadKeys, hasKeys, clearKeys } from './keystore';
+import { createWatchlistStore, WatchlistStore } from './watchlist-store';
 
-export function createHandlers(): Record<string, (...args: any[]) => Promise<any>> {
+export function createHandlers(dbPath?: string): Record<string, (...args: any[]) => Promise<any>> {
   let client: AlpacaClient | null = null;
+
+  // Resolve db path: use provided path, or derive from electron app userData, or fall back to cwd
+  let resolvedDbPath = dbPath;
+  if (!resolvedDbPath) {
+    try {
+      const { app } = require('electron');
+      resolvedDbPath = path.join(app.getPath('userData'), 'watchlist.db');
+    } catch {
+      resolvedDbPath = path.join(process.cwd(), 'watchlist.db');
+    }
+  }
+
+  const watchlistStore: WatchlistStore = createWatchlistStore(resolvedDbPath);
 
   function getClient(): AlpacaClient {
     if (client) return client;
@@ -28,6 +43,15 @@ export function createHandlers(): Record<string, (...args: any[]) => Promise<any
       clearKeys();
       client = null;
     },
+    'create-order': async (_e: any, order: any) => getClient().createOrder(order),
+    'cancel-order': async (_e: any, orderId: string) => getClient().cancelOrder(orderId),
+    'get-quote': async (_e: any, symbol: string) => getClient().getQuote(symbol),
+    'get-portfolio-history': async (_e: any, period: string, timeframe: string) =>
+      getClient().getPortfolioHistory(period, timeframe),
+    'search-assets': async (_e: any, query: string) => getClient().searchAssets(query),
+    'get-watchlist': async () => watchlistStore.getAll(),
+    'add-to-watchlist': async (_e: any, symbol: string, name: string) => watchlistStore.add(symbol, name),
+    'remove-from-watchlist': async (_e: any, symbol: string) => watchlistStore.remove(symbol),
   };
 }
 
