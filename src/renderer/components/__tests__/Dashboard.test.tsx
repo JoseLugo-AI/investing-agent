@@ -21,6 +21,26 @@ vi.mock('../../api', () => ({
     cancelOrder: vi.fn(() => Promise.resolve()),
     addToWatchlist: vi.fn(() => Promise.resolve()),
     removeFromWatchlist: vi.fn(() => Promise.resolve()),
+    validateOrder: vi.fn(() => Promise.resolve({ allowed: true, warnings: [], errors: [] })),
+    getRiskStatus: vi.fn(() => Promise.resolve({
+      dailyLossPercent: 0.01,
+      dailyLossHalted: false,
+      drawdownPercent: 0.02,
+      drawdownLevel: 'ok',
+      largestPositionPercent: 0.018,
+      positionCount: 2,
+      portfolioValue: 100000,
+    })),
+    analyzePosition: vi.fn(() => Promise.resolve({
+      recommendation: 'hold',
+      confidence: 'medium',
+      reasoning: 'Test analysis.',
+      risks: [],
+      timeframe: '1 month',
+    })),
+    hasClaudeKey: vi.fn(() => Promise.resolve(true)),
+    saveClaudeKey: vi.fn(() => Promise.resolve()),
+    clearClaudeKey: vi.fn(() => Promise.resolve()),
   },
 }));
 

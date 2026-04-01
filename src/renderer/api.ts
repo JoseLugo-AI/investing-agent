@@ -1,4 +1,4 @@
-import type { Account, Position, Order, Bar, OrderRequest, Quote, PortfolioHistory, Asset, WatchlistItem } from './types';
+import type { Account, Position, Order, Bar, OrderRequest, Quote, PortfolioHistory, Asset, WatchlistItem, RiskCheck, RiskStatus, AnalysisResult } from './types';
 
 export const api = {
   getAccount: (): Promise<Account> => window.api.getAccount(),
@@ -21,4 +21,13 @@ export const api = {
     window.api.addToWatchlist(symbol, name),
   removeFromWatchlist: (symbol: string): Promise<void> =>
     window.api.removeFromWatchlist(symbol),
+  validateOrder: (order: OrderRequest, currentPrice: number): Promise<RiskCheck> =>
+    window.api.validateOrder(order, currentPrice),
+  getRiskStatus: (): Promise<RiskStatus> => window.api.getRiskStatus(),
+  analyzePosition: (symbol: string): Promise<AnalysisResult> =>
+    window.api.analyzePosition(symbol),
+  saveClaudeKey: (apiKey: string): Promise<void> =>
+    window.api.saveClaudeKey(apiKey),
+  hasClaudeKey: (): Promise<boolean> => window.api.hasClaudeKey(),
+  clearClaudeKey: (): Promise<void> => window.api.clearClaudeKey(),
 };

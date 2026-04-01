@@ -88,6 +88,43 @@ export interface ToastMessage {
   message: string;
 }
 
+// Risk Engine types
+export interface RiskCheck {
+  allowed: boolean;
+  warnings: string[];
+  errors: string[];
+  suggestedQty?: number;
+}
+
+export interface RiskStatus {
+  dailyLossPercent: number;
+  dailyLossHalted: boolean;
+  drawdownPercent: number;
+  drawdownLevel: 'ok' | 'warning' | 'halt' | 'kill';
+  largestPositionPercent: number;
+  positionCount: number;
+  portfolioValue: number;
+}
+
+export interface RiskConfig {
+  maxCapitalPerTradePct: number;
+  dailyLossLimitPct: number;
+  weeklyDrawdownLimitPct: number;
+  maxDrawdownPct: number;
+  maxPositionPct: number;
+  maxSectorPct: number;
+  kellyFraction: number;
+}
+
+// Claude AI Analysis types
+export interface AnalysisResult {
+  recommendation: 'buy' | 'sell' | 'hold';
+  confidence: 'high' | 'medium' | 'low';
+  reasoning: string;
+  risks: string[];
+  timeframe: string;
+}
+
 export interface ElectronAPI {
   getAccount: () => Promise<Account>;
   getPositions: () => Promise<Position[]>;
@@ -104,6 +141,12 @@ export interface ElectronAPI {
   getWatchlist: () => Promise<WatchlistItem[]>;
   addToWatchlist: (symbol: string, name: string) => Promise<void>;
   removeFromWatchlist: (symbol: string) => Promise<void>;
+  validateOrder: (order: OrderRequest) => Promise<RiskCheck>;
+  getRiskStatus: () => Promise<RiskStatus>;
+  analyzePosition: (symbol: string) => Promise<AnalysisResult>;
+  saveClaudeKey: (apiKey: string) => Promise<void>;
+  hasClaudeKey: () => Promise<boolean>;
+  clearClaudeKey: () => Promise<void>;
 }
 
 declare global {

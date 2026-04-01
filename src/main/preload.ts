@@ -21,4 +21,13 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('add-to-watchlist', symbol, name),
   removeFromWatchlist: (symbol: string) =>
     ipcRenderer.invoke('remove-from-watchlist', symbol),
+  validateOrder: (order: any, currentPrice: number) =>
+    ipcRenderer.invoke('validate-order', order, currentPrice),
+  getRiskStatus: () => ipcRenderer.invoke('get-risk-status'),
+  analyzePosition: (symbol: string) =>
+    ipcRenderer.invoke('analyze-position', symbol),
+  saveClaudeKey: (apiKey: string) =>
+    ipcRenderer.invoke('save-claude-key', apiKey),
+  hasClaudeKey: () => ipcRenderer.invoke('has-claude-key'),
+  clearClaudeKey: () => ipcRenderer.invoke('clear-claude-key'),
 });

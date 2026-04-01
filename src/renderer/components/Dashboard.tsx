@@ -9,6 +9,9 @@ import { PortfolioChart } from './PortfolioChart';
 import { Watchlist } from './Watchlist';
 import { OrderForm } from './OrderForm';
 import { OrderConfirmDialog } from './OrderConfirmDialog';
+import { RiskPanel } from './RiskPanel';
+import { AIAnalysis } from './AIAnalysis';
+import { RiskGate } from './RiskGate';
 import { ToastContainer, useToast } from './Toast';
 import { POLL_INTERVAL_MS } from '@shared/constants';
 import type { Account, Position, Order, Bar, OrderRequest } from '../types';
@@ -108,6 +111,15 @@ export function Dashboard(): React.ReactElement {
         </div>
       </div>
 
+      <div className="dashboard-grid">
+        <div className="dashboard-panel">
+          <RiskPanel />
+        </div>
+        <div className="dashboard-panel">
+          <AIAnalysis symbol={selectedSymbol} />
+        </div>
+      </div>
+
       {orderSymbol && !pendingOrder && (
         <div className="dialog-overlay">
           <OrderForm
@@ -121,12 +133,22 @@ export function Dashboard(): React.ReactElement {
       )}
 
       {pendingOrder && (
-        <OrderConfirmDialog
-          order={pendingOrder}
-          lastPrice={orderPrice}
-          onConfirm={handleOrderConfirm}
-          onCancel={() => setPendingOrder(null)}
-        />
+        <div className="dialog-overlay">
+          <div className="dialog">
+            <OrderConfirmDialog
+              order={pendingOrder}
+              lastPrice={orderPrice}
+              onConfirm={handleOrderConfirm}
+              onCancel={() => setPendingOrder(null)}
+            />
+            <RiskGate
+              order={pendingOrder}
+              lastPrice={orderPrice}
+              onConfirm={handleOrderConfirm}
+              onCancel={() => setPendingOrder(null)}
+            />
+          </div>
+        </div>
       )}
 
       <ToastContainer toasts={toasts} />
