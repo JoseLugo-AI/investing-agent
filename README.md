@@ -1,0 +1,181 @@
+# Investing Agent
+
+An AI-powered paper trading dashboard with real-time portfolio management, risk controls, and Claude-powered trade analysis. Built with Electron, React, TypeScript, and the Alpaca API.
+
+![Dashboard Screenshot](docs/screenshot.png)
+
+## Features
+
+**Portfolio Dashboard**
+- Real-time account overview: portfolio value, daily P&L, buying power, cash
+- Interactive candlestick charts (via Lightweight Charts)
+- Portfolio equity history with configurable timeframes (1D/1W/1M/3M/1Y)
+- Positions table with live P&L tracking
+- Order history with status tracking
+
+**Trading**
+- Market and limit orders with buy/sell support
+- Order confirmation dialog with cost estimation
+- Symbol search across all tradable assets
+- Custom watchlist with live price quotes
+- Cancel pending orders
+
+**Risk Engine**
+- Pre-trade validation against multiple risk limits
+- Fractional Kelly Criterion position sizing
+- 3% daily loss halt (auto-stops trading)
+- 5% weekly drawdown pause
+- 20% max drawdown kill switch
+- 3% single position concentration limit
+- 30% sector exposure cap
+- Suggested quantity adjustments when limits are hit
+
+**AI Trade Analysis**
+- Claude-powered position analysis
+- Buy/sell/hold recommendations with confidence levels
+- Risk assessment and reasoning
+- Suggested holding timeframes
+
+## Architecture
+
+```
+src/
+  main/           # Backend (Electron main process / Express web server)
+    alpaca-client    # Alpaca API wrapper
+    risk-engine      # Pre-trade validation, Kelly sizing, drawdown tracking
+    claude-analyzer  # AI trade analysis via Claude API
+    keystore         # Encrypted credential storage (Electron)
+    web-server       # Express backend for web/browser mode
+    ipc-handlers     # Shared handler logic (used by both Electron IPC and Express)
+  renderer/        # Frontend (React)
+    components/      # Dashboard, charts, order form, risk panel, AI analysis
+    api.ts           # Auto-detects Electron IPC vs HTTP and routes accordingly
+  shared/          # Constants, risk parameters, types
+```
+
+## Quick Start
+
+### Prerequisites
+- Node.js 18+
+- [Alpaca](https://alpaca.markets) paper trading account (free)
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/JoseLugo-AI/investing-agent.git
+cd investing-agent
+npm install
+```
+
+### 2. Set up credentials
+
+Create `~/.alpaca-env`:
+```
+ALPACA_KEY_ID=your-key-id
+ALPACA_SECRET_KEY=your-secret-key
+```
+
+Get your keys from [Alpaca Dashboard](https://app.alpaca.markets/paper/dashboard/overview) > API Keys.
+
+### 3. Run
+
+**Web mode** (browser — works anywhere):
+```bash
+export $(cat ~/.alpaca-env | xargs)
+npm run dev:web
+# Open http://localhost:5010
+```
+
+**Electron mode** (desktop app):
+```bash
+export $(cat ~/.alpaca-env | xargs)
+npm run dev
+```
+
+**CLI mode** (terminal only):
+```bash
+export $(cat ~/.alpaca-env | xargs)
+npx tsx cli.ts account
+npx tsx cli.ts orders
+npx tsx cli.ts buy AAPL 1
+npx tsx cli.ts risk
+npx tsx cli.ts analyze NVDA  # requires CLAUDE_API_KEY
+```
+
+## CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `account` | Portfolio value, equity, cash, buying power, daily P&L |
+| `positions` | Open positions with P&L |
+| `orders` | Recent order history |
+| `quote <SYMBOL>` | Real-time quote with bid/ask |
+| `bars <SYMBOL> [timeframe]` | Price bars (1Min, 5Min, 1Hour, 1Day) |
+| `search <QUERY>` | Search tradable assets |
+| `history [period]` | Portfolio equity history |
+| `buy <SYMBOL> <QTY> [limit]` | Place buy order |
+| `sell <SYMBOL> <QTY> [limit]` | Place sell order |
+| `cancel <ORDER_ID>` | Cancel pending order |
+| `risk` | Risk dashboard (daily loss, drawdown, concentration) |
+| `risk-check <SYMBOL> <QTY> <SIDE> [price]` | Pre-trade risk validation |
+| `analyze <SYMBOL>` | Claude AI trade analysis |
+
+## AI Analysis (Optional)
+
+To enable Claude-powered trade analysis:
+
+```bash
+export CLAUDE_API_KEY=your-anthropic-api-key
+```
+
+Or configure it in the Settings panel within the dashboard. The AI analyzer provides buy/sell/hold recommendations based on your positions, account state, and recent price action. This is for **educational purposes only** — always do your own research.
+
+## Risk Parameters
+
+These are the default risk controls. They're intentionally conservative for learning:
+
+| Parameter | Value | Purpose |
+|-----------|-------|---------|
+| Max capital per trade | 2% | Limits single-trade exposure |
+| Daily loss halt | 3% | Stops trading for the day |
+| Weekly drawdown pause | 5% | Pauses trading for the week |
+| Max drawdown kill switch | 20% | Kills all trading |
+| Max single position | 3% | Prevents overconcentration |
+| Max sector exposure | 30% | Diversification guard |
+| Kelly fraction | 0.5 | Half-Kelly for safety |
+
+## Claude Code Integration
+
+This project includes an MCP server so you can use it directly from Claude Code. See [`mcp-server/README.md`](mcp-server/README.md) for setup instructions.
+
+## Tech Stack
+
+- **Frontend:** React 18, TypeScript, Lightweight Charts, Recharts
+- **Backend:** Electron 30 / Express 5
+- **Data:** Alpaca Markets API (paper trading)
+- **AI:** Anthropic Claude API (Sonnet)
+- **Storage:** better-sqlite3 (watchlist), Electron safeStorage (credentials)
+- **Testing:** Vitest, React Testing Library (129 tests)
+- **Build:** Vite, electron-builder
+
+## Tests
+
+```bash
+npm test          # Run all 129 tests
+npm run test:watch  # Watch mode
+```
+
+## Building
+
+```bash
+npm run build          # Build renderer + main
+npm run dist:win       # Build Windows .exe installer
+```
+
+## Disclaimer
+
+This is a **paper trading application** for educational purposes. It uses virtual money through Alpaca's paper trading API. No real money is involved. The AI analysis feature provides educational insights only and should not be considered financial advice. Always do your own research before making any real investment decisions.
+
+## License
+
+MIT
