@@ -1,0 +1,6 @@
+{
+  "symbol": "AAPL",
+  "last": { "price": 178.25, "size": 100, "timestamp": "2026-03-31T19:59:58Z" },
+  "bid": { "price": 178.20, "size": 200 },
+  "ask": { "price": 178.30, "size": 150 }
+}

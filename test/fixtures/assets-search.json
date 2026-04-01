@@ -1,0 +1,5 @@
+[
+  { "id": "asset-aapl", "symbol": "AAPL", "name": "Apple Inc.", "exchange": "NASDAQ", "status": "active", "tradable": true },
+  { "id": "asset-amzn", "symbol": "AMZN", "name": "Amazon.com Inc.", "exchange": "NASDAQ", "status": "active", "tradable": true },
+  { "id": "asset-amd", "symbol": "AMD", "name": "Advanced Micro Devices Inc.", "exchange": "NASDAQ", "status": "active", "tradable": true }
+]
