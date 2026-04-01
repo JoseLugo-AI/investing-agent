@@ -1,0 +1,24 @@
+[
+  {
+    "asset_id": "asset-1",
+    "symbol": "AAPL",
+    "qty": "10",
+    "avg_entry_price": "172.50",
+    "current_price": "178.25",
+    "market_value": "1782.50",
+    "unrealized_pl": "57.50",
+    "unrealized_plpc": "0.0333",
+    "side": "long"
+  },
+  {
+    "asset_id": "asset-2",
+    "symbol": "MSFT",
+    "qty": "5",
+    "avg_entry_price": "410.00",
+    "current_price": "415.80",
+    "market_value": "2079.00",
+    "unrealized_pl": "29.00",
+    "unrealized_plpc": "0.0141",
+    "side": "long"
+  }
+]

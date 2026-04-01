@@ -1,0 +1,17 @@
+{
+  "id": "test-account-id",
+  "account_number": "PA1234567",
+  "status": "ACTIVE",
+  "currency": "USD",
+  "buying_power": "75420.50",
+  "cash": "82150.25",
+  "portfolio_value": "100000.00",
+  "equity": "100000.00",
+  "last_equity": "98500.00",
+  "long_market_value": "17849.75",
+  "short_market_value": "0",
+  "initial_margin": "8924.88",
+  "maintenance_margin": "5354.93",
+  "daytrade_count": 0,
+  "pattern_day_trader": false
+}

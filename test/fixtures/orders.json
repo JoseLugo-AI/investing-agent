@@ -1,0 +1,25 @@
+[
+  {
+    "id": "order-1",
+    "symbol": "AAPL",
+    "qty": "10",
+    "side": "buy",
+    "type": "market",
+    "status": "filled",
+    "filled_avg_price": "172.50",
+    "submitted_at": "2026-03-30T14:30:00Z",
+    "filled_at": "2026-03-30T14:30:02Z"
+  },
+  {
+    "id": "order-2",
+    "symbol": "MSFT",
+    "qty": "5",
+    "side": "buy",
+    "type": "limit",
+    "limit_price": "410.00",
+    "status": "filled",
+    "filled_avg_price": "410.00",
+    "submitted_at": "2026-03-29T15:00:00Z",
+    "filled_at": "2026-03-29T15:01:30Z"
+  }
+]
