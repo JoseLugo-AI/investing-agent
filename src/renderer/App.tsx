@@ -1,10 +1,58 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { Dashboard } from './components/Dashboard';
+import { Settings } from './components/Settings';
+import { api } from './api';
 
 export function App(): React.ReactElement {
+  const [hasKeys, setHasKeys] = useState<boolean | null>(null);
+  const [view, setView] = useState<'dashboard' | 'settings'>('dashboard');
+
+  useEffect(() => {
+    api.hasApiKeys().then(setHasKeys);
+  }, []);
+
+  const handleSaveKeys = async (keyId: string, secretKey: string) => {
+    await api.saveApiKeys(keyId, secretKey);
+    setHasKeys(true);
+    setView('dashboard');
+  };
+
+  const handleClearKeys = async () => {
+    await api.clearApiKeys();
+    setHasKeys(false);
+  };
+
+  if (hasKeys === null) return <div className="app">Loading...</div>;
+
+  if (!hasKeys) {
+    return (
+      <div className="app">
+        <Settings onSave={handleSaveKeys} onClear={handleClearKeys} hasKeys={false} />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
-      <h1>Investing Agent</h1>
-      <p>Paper Trading Dashboard</p>
+      <nav className="app-nav">
+        <button
+          className={view === 'dashboard' ? 'active' : ''}
+          onClick={() => setView('dashboard')}
+        >
+          Dashboard
+        </button>
+        <button
+          className={view === 'settings' ? 'active' : ''}
+          onClick={() => setView('settings')}
+        >
+          Settings
+        </button>
+      </nav>
+      {view === 'dashboard' ? (
+        <Dashboard />
+      ) : (
+        <Settings onSave={handleSaveKeys} onClear={handleClearKeys} hasKeys={true} />
+      )}
     </div>
   );
 }
