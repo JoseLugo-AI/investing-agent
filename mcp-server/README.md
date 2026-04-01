@@ -87,9 +87,11 @@ Every buy order goes through the risk engine automatically. If a trade violates 
 
 When a trade is blocked, Claude will tell you why and suggest a safe quantity.
 
-## Paper Trading Only
+## Paper vs Live Trading
 
-This connects to Alpaca's **paper trading** environment. No real money is involved. Your account starts with $100K in virtual funds.
+By default, this connects to Alpaca's **paper trading** environment ($100K virtual funds). To switch to live trading with real money, add `"ALPACA_LIVE": "true"` to the `env` block in your MCP config.
+
+The risk engine stays active in both modes — the 3% daily loss halt and 20% kill switch protect real capital.
 
 ## Troubleshooting
 

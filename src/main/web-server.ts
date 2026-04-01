@@ -19,7 +19,11 @@ export function startWebServer(): void {
   const secretKey = requireEnv('ALPACA_SECRET_KEY');
   const claudeKey = process.env.ANTHROPIC_API_KEY || '';
 
-  const client = createAlpacaClient(keyId, secretKey);
+  const paper = process.env.ALPACA_LIVE !== 'true';
+  if (!paper) {
+    console.warn('*** LIVE TRADING MODE — real money at risk ***');
+  }
+  const client = createAlpacaClient(keyId, secretKey, paper);
   const dbPath = path.join(process.cwd(), 'watchlist.db');
   const watchlist = createWatchlistStore(dbPath);
 
@@ -142,9 +146,10 @@ export function startWebServer(): void {
     } catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
-  // --- Key status (web mode reads from env, so always "true") ---
+  // --- Key status and trading mode ---
   app.get('/api/has-keys', (_req, res) => res.json(true));
   app.get('/api/has-claude-key', (_req, res) => res.json(!!claudeKey));
+  app.get('/api/trading-mode', (_req, res) => res.json({ paper: client.isPaper }));
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Investing Agent API running on http://0.0.0.0:${PORT}`);

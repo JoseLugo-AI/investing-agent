@@ -27,7 +27,8 @@ export function createHandlers(dbPath?: string): Record<string, (...args: any[])
     if (client) return client;
     const keys = loadKeys();
     if (!keys) throw new Error('API keys not configured');
-    client = createAlpacaClient(keys.keyId, keys.secretKey);
+    const paper = process.env.ALPACA_LIVE !== 'true';
+    client = createAlpacaClient(keys.keyId, keys.secretKey, paper);
     return client;
   }
 
@@ -39,7 +40,8 @@ export function createHandlers(dbPath?: string): Record<string, (...args: any[])
       getClient().getBars(symbol, timeframe),
     'save-api-keys': async (_e: any, keyId: string, secretKey: string) => {
       saveKeys(keyId, secretKey);
-      client = createAlpacaClient(keyId, secretKey);
+      const paper = process.env.ALPACA_LIVE !== 'true';
+      client = createAlpacaClient(keyId, secretKey, paper);
     },
     'has-api-keys': async () => hasKeys(),
     'clear-api-keys': async () => {

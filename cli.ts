@@ -1,7 +1,7 @@
 /**
  * CLI runner for the investing agent.
  * Runs directly in Node/WSL — no Electron needed.
- * Otto invokes this to interact with Alpaca, risk engine, and Claude analyzer.
+ * Set ALPACA_LIVE=true to use real money (default: paper trading).
  *
  * Usage: npx tsx cli.ts <command> [args...]
  *
@@ -45,11 +45,17 @@ if (!ALPACA_KEY_ID || !ALPACA_SECRET_KEY) {
   process.exit(1);
 }
 
+const LIVE_MODE = process.env.ALPACA_LIVE === 'true';
+
+if (LIVE_MODE) {
+  console.warn('*** LIVE TRADING MODE — real money at risk ***\n');
+}
+
 const alpaca = new Alpaca({
   keyId: ALPACA_KEY_ID,
   secretKey: ALPACA_SECRET_KEY,
-  paper: true,
-  baseUrl: 'https://paper-api.alpaca.markets',
+  paper: !LIVE_MODE,
+  baseUrl: LIVE_MODE ? 'https://api.alpaca.markets' : 'https://paper-api.alpaca.markets',
 });
 
 function fmt(n: string | number): string {

@@ -30,7 +30,8 @@ if (!keyId || !secretKey) {
   process.exit(1);
 }
 
-const client: AlpacaClient = createAlpacaClient(keyId, secretKey);
+const paper = process.env.ALPACA_LIVE !== 'true';
+const client: AlpacaClient = createAlpacaClient(keyId, secretKey, paper);
 
 // --- Tool definitions ---
 
@@ -162,8 +163,11 @@ const TOOLS = [
 
 async function handleTool(name: string, args: Record<string, unknown>): Promise<string> {
   switch (name) {
-    case 'get_account':
-      return JSON.stringify(await client.getAccount(), null, 2);
+    case 'get_account': {
+      const acct = await client.getAccount();
+      acct._tradingMode = client.isPaper ? 'PAPER' : 'LIVE';
+      return JSON.stringify(acct, null, 2);
+    }
 
     case 'get_positions':
       return JSON.stringify(await client.getPositions(), null, 2);

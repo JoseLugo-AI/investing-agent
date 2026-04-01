@@ -1,5 +1,5 @@
 import Alpaca from '@alpacahq/alpaca-trade-api';
-import { ALPACA_PAPER_URL } from '../shared/constants';
+import { ALPACA_PAPER_URL, ALPACA_LIVE_URL } from '../shared/constants';
 
 export interface AlpacaClient {
   getAccount: () => Promise<any>;
@@ -11,17 +11,19 @@ export interface AlpacaClient {
   getQuote: (symbol: string) => Promise<any>;
   getPortfolioHistory: (period: string, timeframe: string) => Promise<any>;
   searchAssets: (query: string) => Promise<any[]>;
+  isPaper: boolean;
 }
 
-export function createAlpacaClient(keyId: string, secretKey: string): AlpacaClient {
+export function createAlpacaClient(keyId: string, secretKey: string, paper: boolean = true): AlpacaClient {
   const alpaca = new Alpaca({
     keyId,
     secretKey,
-    paper: true,
-    baseUrl: ALPACA_PAPER_URL,
+    paper,
+    baseUrl: paper ? ALPACA_PAPER_URL : ALPACA_LIVE_URL,
   });
 
   return {
+    isPaper: paper,
     getAccount: () => alpaca.getAccount(),
     getPositions: () => alpaca.getPositions(),
     getOrders: () => alpaca.getOrders({ status: 'all', limit: 20, direction: 'desc' }),
