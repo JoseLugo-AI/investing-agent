@@ -5,7 +5,7 @@ vi.mock('../risk-engine', () => ({
   getDefaultRiskConfig: vi.fn(() => ({})),
 }));
 
-import { executeDecision } from '../agent-executor';
+import { executeDecision, executeShortEntry, executeShortExit } from '../agent-executor';
 import { validateOrder } from '../risk-engine';
 
 const mockValidateOrder = vi.mocked(validateOrder);
@@ -173,6 +173,83 @@ describe('executeDecision', () => {
       timeframe: '1 week',
       target_allocation_pct: 0.02,
     }, 900, ctx as any);
+
+    expect(result.action).toBe('skip');
+    expect(result.reason).toContain('order failed');
+  });
+});
+
+describe('executeShortEntry', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+
+  it('places a sell order to open a short', async () => {
+    const ctx = makeCtx();
+    const result = await executeShortEntry('MSFT', 5, 350, 'moderate', 1, ctx as any);
+
+    expect(result.action).toBe('short_sell');
+    expect(result.qty).toBe(5);
+    expect(ctx.alpaca.createOrder).toHaveBeenCalledWith(expect.objectContaining({
+      symbol: 'MSFT',
+      qty: 5,
+      side: 'sell',
+      type: 'market',
+    }));
+  });
+
+  it('logs decision and activity on success', async () => {
+    const ctx = makeCtx();
+    await executeShortEntry('MSFT', 5, 350, 'moderate', 1, ctx as any);
+
+    expect(ctx.store.saveDecision).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'short_sell',
+      symbol: 'MSFT',
+    }));
+    expect(ctx.store.logActivity).toHaveBeenCalledWith('short_entry', expect.stringContaining('SHORT 5 MSFT'), 'moderate', 'MSFT', expect.any(String));
+  });
+
+  it('returns skip on order failure', async () => {
+    const ctx = makeCtx({
+      alpaca: { createOrder: vi.fn().mockRejectedValue(new Error('not shortable')) },
+    });
+    const result = await executeShortEntry('MSFT', 5, 350, 'moderate', 1, ctx as any);
+
+    expect(result.action).toBe('skip');
+    expect(result.reason).toContain('order failed');
+  });
+});
+
+describe('executeShortExit', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+
+  it('places a buy order to cover a short', async () => {
+    const ctx = makeCtx();
+    const result = await executeShortExit('MSFT', 5, 340, 'RSI take profit', 'moderate', ctx as any);
+
+    expect(result.action).toBe('cover');
+    expect(ctx.alpaca.createOrder).toHaveBeenCalledWith(expect.objectContaining({
+      symbol: 'MSFT',
+      qty: 5,
+      side: 'buy',
+      type: 'market',
+    }));
+  });
+
+  it('logs decision and activity on cover', async () => {
+    const ctx = makeCtx();
+    await executeShortExit('MSFT', 5, 340, 'RSI take profit', 'moderate', ctx as any);
+
+    expect(ctx.store.saveDecision).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'cover',
+      symbol: 'MSFT',
+    }));
+    expect(ctx.store.logActivity).toHaveBeenCalledWith('short_exit', expect.stringContaining('COVER 5 MSFT'), 'moderate', 'MSFT');
+  });
+
+  it('returns skip on cover failure', async () => {
+    const ctx = makeCtx({
+      alpaca: { createOrder: vi.fn().mockRejectedValue(new Error('market closed')) },
+    });
+    const result = await executeShortExit('MSFT', 5, 340, 'time stop', 'moderate', ctx as any);
 
     expect(result.action).toBe('skip');
     expect(result.reason).toContain('order failed');

@@ -213,6 +213,65 @@ export function evaluateStrategy(input: StrategyInput): StrategySignal {
   };
 }
 
+interface ShortStrategyInput {
+  technicals: TechnicalSignal;
+  sentiment: SentimentResult;
+  regime: RegimeResult;
+  currentPrice: number;
+  accountValue: number;
+}
+
+/**
+ * Evaluate whether a stock qualifies for a mean-reversion short.
+ * This is a strict binary check — unlike the long strategy which uses
+ * a composite score, shorts require ALL conditions to be true.
+ */
+export function evaluateShortStrategy(input: ShortStrategyInput): StrategySignal {
+  const { technicals, sentiment, regime, currentPrice } = input;
+  const reasoning: string[] = [];
+
+  const rsi2 = technicals.rsi?.value ?? 50;
+  const priceBelowSma200 = technicals.sma200 !== null && currentPrice < technicals.sma200;
+  const macdDeclining = technicals.macd?.histogramRising === false;
+
+  reasoning.push(`Regime: ${regime.regime.toUpperCase()}`);
+  reasoning.push(`RSI(2): ${rsi2.toFixed(1)}`);
+  reasoning.push(`Price vs SMA200: ${priceBelowSma200 ? 'below' : 'above'} ($${technicals.sma200?.toFixed(2) ?? 'N/A'})`);
+  reasoning.push(`MACD histogram: ${macdDeclining ? 'declining' : 'not declining'}`);
+  reasoning.push(`Sentiment: ${sentiment.score.toFixed(2)}`);
+
+  const isShortCandidate =
+    (regime.regime === 'bear' || regime.regime === 'crisis') &&
+    rsi2 > 90 &&
+    priceBelowSma200 &&
+    macdDeclining &&
+    sentiment.score < -0.1;
+
+  if (isShortCandidate) {
+    return {
+      action: 'strong_sell',
+      score: -75,
+      positionSizePct: 0.015,
+      atrShares: null,
+      stopLoss: currentPrice * 1.10,
+      trailingStop: null,
+      reasoning,
+      confidence: 'high',
+    };
+  }
+
+  return {
+    action: 'hold',
+    score: 0,
+    positionSizePct: 0,
+    atrShares: null,
+    stopLoss: null,
+    trailingStop: null,
+    reasoning: [...reasoning, 'Short conditions not met'],
+    confidence: 'low',
+  };
+}
+
 /**
  * Format strategy signal for inclusion in the Claude trading prompt.
  */

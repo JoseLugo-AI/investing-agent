@@ -12,7 +12,7 @@ interface ExecutionContext {
 }
 
 interface ExecutionResult {
-  action: 'buy' | 'sell' | 'hold' | 'skip';
+  action: 'buy' | 'sell' | 'hold' | 'skip' | 'short_sell' | 'cover';
   reason: string;
   qty: number | null;
   price: number | null;
@@ -195,6 +195,120 @@ export async function executeDecision(
   };
   logDecision(store, analysisId, tierId, symbol, result);
   return result;
+}
+
+/**
+ * Open a short position — submit a sell order for a stock we don't own.
+ * Alpaca handles this as a short sell automatically.
+ */
+export async function executeShortEntry(
+  symbol: string,
+  qty: number,
+  currentPrice: number,
+  tierId: TierId,
+  analysisId: number,
+  ctx: ExecutionContext
+): Promise<ExecutionResult> {
+  const { alpaca, store } = ctx;
+
+  try {
+    const order = await alpaca.createOrder({
+      symbol,
+      qty,
+      side: 'sell',
+      type: 'market',
+      time_in_force: 'day',
+    });
+
+    const result: ExecutionResult = {
+      action: 'short_sell',
+      reason: `Short entry: ${symbol} @ ~$${currentPrice.toFixed(2)}`,
+      qty,
+      price: currentPrice,
+      orderId: order.id,
+      riskCheck: null,
+    };
+
+    store.saveDecision({
+      analysisId,
+      tierId,
+      symbol,
+      action: 'short_sell',
+      reason: result.reason,
+      qty,
+      price: currentPrice,
+      orderId: order.id,
+      riskCheck: null,
+    });
+
+    store.logActivity('short_entry', `SHORT ${qty} ${symbol} @ ~$${currentPrice.toFixed(2)}`, tierId, symbol,
+      JSON.stringify({ analysisId }));
+
+    return result;
+  } catch (err: any) {
+    store.logActivity('error', `Short entry failed for ${symbol}: ${err.message}`, tierId, symbol);
+    return {
+      action: 'skip',
+      reason: `Short order failed: ${err.message}`,
+      qty: null, price: null, orderId: null, riskCheck: null,
+    };
+  }
+}
+
+/**
+ * Cover (close) a short position — submit a buy order.
+ */
+export async function executeShortExit(
+  symbol: string,
+  qty: number,
+  currentPrice: number,
+  exitReason: string,
+  tierId: TierId,
+  ctx: ExecutionContext
+): Promise<ExecutionResult> {
+  const { alpaca, store } = ctx;
+
+  try {
+    const order = await alpaca.createOrder({
+      symbol,
+      qty,
+      side: 'buy',
+      type: 'market',
+      time_in_force: 'day',
+    });
+
+    const result: ExecutionResult = {
+      action: 'cover',
+      reason: exitReason,
+      qty,
+      price: currentPrice,
+      orderId: order.id,
+      riskCheck: null,
+    };
+
+    store.saveDecision({
+      analysisId: 0,
+      tierId,
+      symbol,
+      action: 'cover',
+      reason: exitReason,
+      qty,
+      price: currentPrice,
+      orderId: order.id,
+      riskCheck: null,
+    });
+
+    store.logActivity('short_exit', `COVER ${qty} ${symbol} @ ~$${currentPrice.toFixed(2)} — ${exitReason}`, tierId, symbol);
+
+    return result;
+  } catch (err: any) {
+    store.logActivity('error', `Cover failed for ${symbol}: ${err.message}`, tierId, symbol);
+    return {
+      action: 'skip',
+      reason: `Cover order failed: ${err.message}`,
+      qty: null, price: null, orderId: null, riskCheck: null,
+    };
+  }
 }
 
 function logDecision(

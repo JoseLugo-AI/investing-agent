@@ -3,6 +3,7 @@ import {
   DAILY_LOSS_LIMIT_PCT,
   MAX_DRAWDOWN_PCT,
   MAX_POSITION_PCT,
+  MAX_SHORT_POSITION_PCT,
   KELLY_FRACTION,
   DRAWDOWN_THRESHOLDS,
 } from '../shared/risk-constants';
@@ -194,6 +195,43 @@ export function checkDrawdown(
   if (percent >= DRAWDOWN_THRESHOLDS.halt) return { level: 'halt', percent };
   if (percent >= DRAWDOWN_THRESHOLDS.warning) return { level: 'warning', percent };
   return { level: 'ok', percent };
+}
+
+/**
+ * Pre-trade validation for short sell orders.
+ * Checks position size against the tighter short limit (1.5% vs 3% for longs).
+ */
+export function validateShortOrder(
+  order: OrderInput,
+  account: AccountInput,
+  positions: PositionInput[],
+  currentPrice: number
+): RiskCheck {
+  const warnings: string[] = [];
+  const errors: string[] = [];
+
+  const portfolioValue = parseFloat(account.portfolio_value);
+  const orderValue = order.qty * currentPrice;
+  const maxShortValue = portfolioValue * MAX_SHORT_POSITION_PCT;
+
+  // 1. Check daily loss limit
+  const dailyLoss = checkDailyLoss({ equity: account.equity, last_equity: account.last_equity } as AccountInput);
+  if (dailyLoss.halted) {
+    errors.push(`Daily loss limit reached (${(dailyLoss.lossPercent * 100).toFixed(1)}%). Trading halted.`);
+  }
+
+  // 2. Check short position size (1.5% of portfolio)
+  if (orderValue > maxShortValue) {
+    errors.push(`Short position size ($${orderValue.toFixed(2)}) exceeds max short limit of ${(MAX_SHORT_POSITION_PCT * 100).toFixed(1)}% ($${maxShortValue.toFixed(2)}).`);
+  }
+
+  // 3. Suggest reduced qty if too large
+  let suggestedQty: number | undefined;
+  if (orderValue > maxShortValue) {
+    suggestedQty = Math.max(0, Math.floor(maxShortValue / currentPrice));
+  }
+
+  return { allowed: errors.length === 0, warnings, errors, suggestedQty };
 }
 
 /**

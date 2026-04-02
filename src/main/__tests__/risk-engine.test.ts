@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   validateOrder,
+  validateShortOrder,
   calculateKellySize,
   checkDailyLoss,
   checkDrawdown,
@@ -191,6 +192,54 @@ describe('Risk Engine', () => {
       const result = checkDrawdown(100000, 105000);
       expect(result.level).toBe('ok');
       expect(result.percent).toBe(0);
+    });
+  });
+
+  describe('validateShortOrder', () => {
+    it('allows a valid short order within 1.5% limit', () => {
+      // 1.5% of 100k = $1500. 1 share at $350 = $350
+      const result = validateShortOrder(
+        { symbol: 'MSFT', qty: 1, side: 'sell', type: 'market', time_in_force: 'day' },
+        makeAccount(),
+        makePositions(),
+        350.00
+      );
+      expect(result.allowed).toBe(true);
+    });
+
+    it('blocks short exceeding 1.5% position limit', () => {
+      // 1.5% of 100k = $1500. 5 shares at $350 = $1750
+      const result = validateShortOrder(
+        { symbol: 'MSFT', qty: 5, side: 'sell', type: 'market', time_in_force: 'day' },
+        makeAccount(),
+        makePositions(),
+        350.00
+      );
+      expect(result.allowed).toBe(false);
+      expect(result.errors[0]).toContain('position size');
+    });
+
+    it('suggests reduced qty when short is too large', () => {
+      const result = validateShortOrder(
+        { symbol: 'MSFT', qty: 10, side: 'sell', type: 'market', time_in_force: 'day' },
+        makeAccount(),
+        makePositions(),
+        350.00
+      );
+      expect(result.suggestedQty).toBeDefined();
+      expect(result.suggestedQty!).toBeLessThan(10);
+      expect(result.suggestedQty!).toBeGreaterThanOrEqual(0);
+    });
+
+    it('blocks when daily loss halted', () => {
+      const result = validateShortOrder(
+        { symbol: 'GOOG', qty: 1, side: 'sell', type: 'market', time_in_force: 'day' },
+        makeAccount({ equity: '96000.00', last_equity: '100000.00' }),
+        makePositions(),
+        175.00
+      );
+      expect(result.allowed).toBe(false);
+      expect(result.errors.some(e => e.includes('Daily loss'))).toBe(true);
     });
   });
 
