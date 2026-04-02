@@ -29,6 +29,11 @@ export function createPositionMonitor(
   let running = false;
   let checking = false;
 
+  // Track last effective stop per symbol to avoid redundant logs/orders
+  const lastEffectiveStop = new Map<string, number>();
+  // Track symbols with pending stop-sell orders to avoid duplicate submissions
+  const pendingStopSells = new Set<string>();
+
   async function checkPositions(): Promise<void> {
     if (!running || checking) return;
     checking = true;
@@ -36,6 +41,15 @@ export function createPositionMonitor(
     try {
       const positions = await alpaca.getPositions();
       if (positions.length === 0) return;
+
+      // Clean up tracking for positions we no longer hold
+      const heldSymbols = new Set(positions.map(p => p.symbol));
+      Array.from(lastEffectiveStop.keys()).forEach(sym => {
+        if (!heldSymbols.has(sym)) {
+          lastEffectiveStop.delete(sym);
+          pendingStopSells.delete(sym);
+        }
+      });
 
       for (const pos of positions) {
         const symbol = pos.symbol;
@@ -71,7 +85,17 @@ export function createPositionMonitor(
         // Use the higher of the two stops (more protective)
         const effectiveStop = Math.max(hardStop, trailingStop);
 
+        // Skip if effective stop hasn't changed (within 1 cent)
+        const prevStop = lastEffectiveStop.get(symbol);
+        if (prevStop !== undefined && Math.abs(effectiveStop - prevStop) < 0.01) {
+          continue;
+        }
+        lastEffectiveStop.set(symbol, effectiveStop);
+
         if (currentPrice < effectiveStop) {
+          // Skip if we already submitted a stop sell for this symbol
+          if (pendingStopSells.has(symbol)) continue;
+
           // SELL — stop triggered
           const stopType = currentPrice < hardStop ? 'hard stop' : 'trailing stop';
           store.logActivity(
@@ -82,6 +106,7 @@ export function createPositionMonitor(
             JSON.stringify({ stopType, effectiveStop, hardStop, trailingStop, atr14, atr22 })
           );
 
+          pendingStopSells.add(symbol);
           try {
             await alpaca.createOrder({
               symbol,
@@ -91,6 +116,8 @@ export function createPositionMonitor(
               time_in_force: 'day',
             });
           } catch (err: any) {
+            // Order failed — allow retry on next cycle
+            pendingStopSells.delete(symbol);
             store.logActivity('error', `Stop sell failed for ${symbol}: ${err.message}`, null, symbol);
           }
         }
