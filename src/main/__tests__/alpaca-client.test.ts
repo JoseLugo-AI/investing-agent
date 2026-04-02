@@ -16,6 +16,7 @@ const mockCancelOrder = vi.fn();
 const mockGetSnapshot = vi.fn();
 const mockGetPortfolioHistory = vi.fn();
 const mockGetAssets = vi.fn();
+const mockGetAsset = vi.fn();
 
 vi.mock('@alpacahq/alpaca-trade-api', () => {
   return {
@@ -29,6 +30,7 @@ vi.mock('@alpacahq/alpaca-trade-api', () => {
       getSnapshot: mockGetSnapshot,
       getPortfolioHistory: mockGetPortfolioHistory,
       getAssets: mockGetAssets,
+      getAsset: mockGetAsset,
     })),
   };
 });
@@ -102,5 +104,18 @@ describe('AlpacaClient', () => {
     const assets = await client.searchAssets('AA');
     expect(assets).toHaveLength(3);
     expect(assets[0].symbol).toBe('AAPL');
+  });
+
+  it('gets asset details for easy-to-borrow check', async () => {
+    mockGetAsset.mockResolvedValue({
+      symbol: 'MSFT',
+      easy_to_borrow: true,
+      shortable: true,
+      tradable: true,
+    });
+    const asset = await client.getAsset('MSFT');
+    expect(asset.symbol).toBe('MSFT');
+    expect(asset.easy_to_borrow).toBe(true);
+    expect(asset.shortable).toBe(true);
   });
 });

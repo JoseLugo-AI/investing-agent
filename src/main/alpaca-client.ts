@@ -11,6 +11,7 @@ export interface AlpacaClient {
   getQuote: (symbol: string) => Promise<any>;
   getPortfolioHistory: (period: string, timeframe: string) => Promise<any>;
   searchAssets: (query: string) => Promise<any[]>;
+  getAsset: (symbol: string) => Promise<{ symbol: string; easy_to_borrow: boolean; shortable: boolean; tradable: boolean }>;
   isPaper: boolean;
 }
 
@@ -60,6 +61,15 @@ export function createAlpacaClient(keyId: string, secretKey: string, paper: bool
       return assets
         .filter((a: any) => a.tradable)
         .slice(0, 10);
+    },
+    getAsset: async (symbol: string) => {
+      const asset = await alpaca.getAsset(symbol);
+      return {
+        symbol: asset.symbol,
+        easy_to_borrow: asset.easy_to_borrow,
+        shortable: asset.shortable,
+        tradable: asset.tradable,
+      };
     },
   };
 }

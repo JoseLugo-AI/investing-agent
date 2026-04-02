@@ -53,7 +53,17 @@ export interface AgentAnalysis {
 
 // === Decision Records ===
 
-export type DecisionAction = 'buy' | 'sell' | 'hold' | 'skip';
+export type DecisionAction = 'buy' | 'sell' | 'hold' | 'skip' | 'short_sell' | 'cover';
+
+/** Tracked short position for exit logic */
+export interface ShortPosition {
+  symbol: string;
+  entryPrice: number;
+  qty: number;
+  entryDate: string;
+  orderId: string;
+  tierId: TierId;
+}
 
 export interface AgentDecision {
   id: number;
@@ -71,7 +81,7 @@ export interface AgentDecision {
 
 // === Activity Feed ===
 
-export type ActivityType = 'scan_start' | 'scan_complete' | 'analysis' | 'trade' | 'hold' | 'skip' | 'error' | 'agent_start' | 'agent_stop' | 'rebalance';
+export type ActivityType = 'scan_start' | 'scan_complete' | 'analysis' | 'trade' | 'hold' | 'skip' | 'error' | 'agent_start' | 'agent_stop' | 'rebalance' | 'short_entry' | 'short_exit' | 'short_kill';
 
 export interface AgentActivity {
   id: number;
