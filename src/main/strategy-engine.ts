@@ -184,6 +184,13 @@ export function evaluateStrategy(input: StrategyInput): StrategySignal {
       action = 'hold';
       confidence = 'high';
       reasoning.push('Crisis regime — no new positions');
+    } else if (regime.regime === 'bear' && score >= 40 && sentiment.score >= 0.3) {
+      // High-conviction longs in bear regime at half size.
+      // Score 40+ here means pre-regime score was 60+ (bear applies -20).
+      action = 'buy';
+      confidence = 'high';
+      positionSizePct = positionSizePct * 0.5;
+      reasoning.push('Bear regime — high-conviction entry at half position size (pre-regime score 60+)');
     } else if (score >= 50 && sentiment.score >= 0.3) {
       action = 'strong_buy';
       confidence = 'high';

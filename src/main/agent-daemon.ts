@@ -325,7 +325,10 @@ export function createAgentDaemon(
           } else {
             await sleep(CLAUDE_CALL_DELAY_MS);
             sentiment = await analyzeSentiment(symbol, currentPrice);
-            store.cacheSentiment(symbol, JSON.stringify(sentiment));
+            // Only cache successful parses — failed ones retry next scan
+            if (!(sentiment as any)._parseFailed) {
+              store.cacheSentiment(symbol, JSON.stringify(sentiment));
+            }
           }
 
           // Screen for short entry
@@ -496,7 +499,10 @@ export function createAgentDaemon(
           } else {
             await sleep(CLAUDE_CALL_DELAY_MS);
             sentiment = await analyzeSentiment(candidate.symbol, candidate.currentPrice);
-            store.cacheSentiment(candidate.symbol, JSON.stringify(sentiment));
+            // Only cache successful parses — failed ones retry next scan
+            if (!(sentiment as any)._parseFailed) {
+              store.cacheSentiment(candidate.symbol, JSON.stringify(sentiment));
+            }
           }
 
           // 3. Run strategy engine (zero tokens — pure math)

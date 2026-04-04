@@ -50,7 +50,7 @@ export function screenShortEntry(input: ShortScreenInput): ShortScreenResult {
     rejections.push('Regime must be BEAR or CRISIS');
   }
   if (input.rsi2 <= SHORT_RSI2_ENTRY) {
-    rejections.push('RSI(2) must be > 90');
+    rejections.push(`RSI(2) must be > ${SHORT_RSI2_ENTRY}`);
   }
   if (!input.priceBelowSma200) {
     rejections.push('Price must be below 200 SMA');

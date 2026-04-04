@@ -63,8 +63,8 @@ export const SHORT_TIME_STOP_DAYS = 5;
 /** Short hard stop — max % price can rise above entry before forced cover */
 export const SHORT_HARD_STOP_PCT = 0.10;
 
-/** RSI(2) threshold for short entry — must be above this */
-export const SHORT_RSI2_ENTRY = 90;
+/** RSI(2) threshold for short entry — must be above this (lowered from 90 to widen the entry window) */
+export const SHORT_RSI2_ENTRY = 80;
 
 /** RSI(2) threshold for short exit (take profit) — cover when below this */
 export const SHORT_RSI2_EXIT = 50;

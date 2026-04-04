@@ -68,37 +68,82 @@ export async function analyzeSentiment(symbol: string, currentPrice: number): Pr
   }
 }
 
-function parseSentimentResponse(raw: string): SentimentResult {
-  const fallback: SentimentResult = {
+function parseSentimentResponse(raw: string): SentimentResult & { _parseFailed?: boolean } {
+  const fallback: SentimentResult & { _parseFailed: boolean } = {
     score: 0,
     label: 'neutral',
     reasoning: 'Could not parse sentiment response.',
     catalysts: [],
     newsAge: 'stale',
+    _parseFailed: true,
   };
 
-  try {
-    const jsonBlockMatch = raw.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
-    const jsonStr = jsonBlockMatch ? jsonBlockMatch[1] : raw;
-    const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return fallback;
-
-    const parsed = JSON.parse(jsonMatch[0]);
-    const score = typeof parsed.score === 'number' ? Math.max(-1, Math.min(1, parsed.score)) : 0;
-
-    const VALID_LABELS = ['very_bearish', 'bearish', 'neutral', 'bullish', 'very_bullish'] as const;
-    const label = VALID_LABELS.includes(parsed.label) ? parsed.label : scoreToLabel(score);
-
-    return {
-      score,
-      label,
-      reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning : fallback.reasoning,
-      catalysts: Array.isArray(parsed.catalysts) ? parsed.catalysts.map(String) : [],
-      newsAge: parsed.news_age === 'fresh' ? 'fresh' : 'stale',
-    };
-  } catch {
+  if (!raw || raw.trim().length === 0) {
+    console.error('[sentiment] Empty response from Claude');
     return fallback;
   }
+
+  // Strategy 1: Extract JSON from markdown code block
+  const jsonBlockMatch = raw.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+  // Strategy 2: Find a JSON object directly in the text
+  const rawJsonMatch = raw.match(/\{[\s\S]*\}/);
+
+  const candidates = [
+    jsonBlockMatch?.[1]?.trim(),
+    rawJsonMatch?.[0],
+    raw.trim(),  // Strategy 3: The entire response might be JSON
+  ].filter(Boolean) as string[];
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+      if (typeof parsed.score !== 'undefined') {
+        return extractSentiment(parsed);
+      }
+    } catch {
+      // Try next candidate
+    }
+  }
+
+  // Strategy 4: Regex extraction — pull individual fields from malformed JSON
+  const scoreMatch = raw.match(/"score"\s*:\s*(-?[\d.]+)/);
+  const labelMatch = raw.match(/"label"\s*:\s*"([^"]+)"/);
+  const reasoningMatch = raw.match(/"reasoning"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+
+  if (scoreMatch) {
+    const score = Math.max(-1, Math.min(1, parseFloat(scoreMatch[1])));
+    const VALID_LABELS = ['very_bearish', 'bearish', 'neutral', 'bullish', 'very_bullish'] as const;
+    const rawLabel = labelMatch?.[1] as any;
+    return {
+      score,
+      label: VALID_LABELS.includes(rawLabel) ? rawLabel : scoreToLabel(score),
+      reasoning: reasoningMatch?.[1] ?? `Sentiment score: ${score}`,
+      catalysts: [],
+      newsAge: 'stale',
+    };
+  }
+
+  console.error('[sentiment] All parse strategies failed. Raw response:', raw.substring(0, 500));
+  return fallback;
+}
+
+function extractSentiment(parsed: any): SentimentResult {
+  const score = typeof parsed.score === 'number'
+    ? Math.max(-1, Math.min(1, parsed.score))
+    : typeof parsed.score === 'string'
+      ? Math.max(-1, Math.min(1, parseFloat(parsed.score) || 0))
+      : 0;
+
+  const VALID_LABELS = ['very_bearish', 'bearish', 'neutral', 'bullish', 'very_bullish'] as const;
+  const label = VALID_LABELS.includes(parsed.label) ? parsed.label : scoreToLabel(score);
+
+  return {
+    score,
+    label,
+    reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning : `Sentiment score: ${score}`,
+    catalysts: Array.isArray(parsed.catalysts) ? parsed.catalysts.map(String) : [],
+    newsAge: parsed.news_age === 'fresh' || parsed.newsAge === 'fresh' ? 'fresh' : 'stale',
+  };
 }
 
 function scoreToLabel(score: number): SentimentResult['label'] {
