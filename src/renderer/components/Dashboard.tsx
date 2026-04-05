@@ -91,33 +91,32 @@ export function Dashboard(): React.ReactElement {
       <AccountSummary account={account} />
       <PortfolioChart />
 
+      {/* Positions + Chart & AI Analysis side by side */}
       <div className="dashboard-grid">
         <div className="dashboard-panel">
           <h2>Positions</h2>
           <PositionsTable positions={positions} onSelectSymbol={setSelectedSymbol} />
         </div>
-        <div className="dashboard-panel">
+        <div className="dashboard-panel dashboard-panel--stacked">
           <PriceChart symbol={selectedSymbol} bars={bars} />
+          <AIAnalysis symbol={selectedSymbol} />
         </div>
       </div>
 
+      {/* Watchlist + Recent Orders */}
       <div className="dashboard-grid">
+        <div className="dashboard-panel">
+          <Watchlist onTrade={handleTrade} />
+        </div>
         <div className="dashboard-panel">
           <h2>Recent Orders</h2>
           <OrdersTable orders={orders} />
         </div>
-        <div className="dashboard-panel">
-          <Watchlist onTrade={handleTrade} />
-        </div>
       </div>
 
-      <div className="dashboard-grid">
-        <div className="dashboard-panel">
-          <RiskPanel />
-        </div>
-        <div className="dashboard-panel">
-          <AIAnalysis symbol={selectedSymbol} />
-        </div>
+      {/* Risk Monitor - full width */}
+      <div className="dashboard-panel">
+        <RiskPanel />
       </div>
 
       {orderSymbol && !pendingOrder && (

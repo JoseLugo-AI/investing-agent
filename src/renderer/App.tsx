@@ -3,7 +3,22 @@ import { Dashboard } from './components/Dashboard';
 import { Settings } from './components/Settings';
 import { AgentDashboard } from './components/AgentDashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { BackgroundGradientAnimation } from './components/ui/background-gradient-animation';
 import { api } from './api';
+
+const bgProps = {
+  gradientBackgroundStart: "rgb(15, 23, 42)",
+  gradientBackgroundEnd: "rgb(7, 11, 28)",
+  firstColor: "59, 130, 246",
+  secondColor: "139, 92, 246",
+  thirdColor: "6, 182, 212",
+  fourthColor: "168, 85, 247",
+  fifthColor: "34, 197, 94",
+  pointerColor: "99, 102, 241",
+  size: "80%",
+  blendingValue: "screen",
+  interactive: true,
+} as const;
 
 export function App(): React.ReactElement {
   const [hasKeys, setHasKeys] = useState<boolean | null>(null);
@@ -28,39 +43,43 @@ export function App(): React.ReactElement {
 
   if (!hasKeys) {
     return (
-      <div className="app">
-        <Settings onSave={handleSaveKeys} onClear={handleClearKeys} hasKeys={false} />
-      </div>
+      <BackgroundGradientAnimation {...bgProps}>
+        <div className="app">
+          <Settings onSave={handleSaveKeys} onClear={handleClearKeys} hasKeys={false} />
+        </div>
+      </BackgroundGradientAnimation>
     );
   }
 
   return (
     <ErrorBoundary>
-      <div className="app">
-        <nav className="app-nav">
-          <button
-            className={view === 'dashboard' ? 'active' : ''}
-            onClick={() => setView('dashboard')}
-          >
-            Dashboard
-          </button>
-          <button
-            className={view === 'agent' ? 'active' : ''}
-            onClick={() => setView('agent')}
-          >
-            Agent
-          </button>
-          <button
-            className={view === 'settings' ? 'active' : ''}
-            onClick={() => setView('settings')}
-          >
-            Settings
-          </button>
-        </nav>
-        {view === 'dashboard' && <Dashboard />}
-        {view === 'agent' && <AgentDashboard />}
-        {view === 'settings' && <Settings onSave={handleSaveKeys} onClear={handleClearKeys} hasKeys={true} />}
-      </div>
+      <BackgroundGradientAnimation {...bgProps}>
+        <div className="app">
+          <nav className="app-nav">
+            <button
+              className={view === 'dashboard' ? 'active' : ''}
+              onClick={() => setView('dashboard')}
+            >
+              Dashboard
+            </button>
+            <button
+              className={view === 'agent' ? 'active' : ''}
+              onClick={() => setView('agent')}
+            >
+              Agent
+            </button>
+            <button
+              className={view === 'settings' ? 'active' : ''}
+              onClick={() => setView('settings')}
+            >
+              Settings
+            </button>
+          </nav>
+          {view === 'dashboard' && <Dashboard />}
+          {view === 'agent' && <AgentDashboard />}
+          {view === 'settings' && <Settings onSave={handleSaveKeys} onClear={handleClearKeys} hasKeys={true} />}
+        </div>
+      </BackgroundGradientAnimation>
     </ErrorBoundary>
   );
 }
