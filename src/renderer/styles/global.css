@@ -589,6 +589,39 @@ body {
   font-weight: 600;
 }
 
+/* Portfolio Tooltip */
+.portfolio-tooltip {
+  background: rgba(8, 12, 24, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  box-shadow: var(--shadow-lg);
+  min-width: 140px;
+}
+
+.portfolio-tooltip-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.portfolio-tooltip-equity {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.portfolio-tooltip-pl {
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.portfolio-tooltip-pl.positive { color: var(--green); }
+.portfolio-tooltip-pl.negative { color: var(--red); }
+
 .period-selector { display: flex; gap: 4px; }
 
 .period-selector button {

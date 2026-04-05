@@ -28,12 +28,12 @@ export function PriceChart({ symbol, bars }: Props): React.ReactElement {
       width: containerRef.current.clientWidth,
       height: 300,
       layout: {
-        background: { color: '#1a1d27' },
-        textColor: '#8b8fa3',
+        background: { color: 'transparent' },
+        textColor: '#6b7280',
       },
       grid: {
-        vertLines: { color: '#2a2d3a' },
-        horzLines: { color: '#2a2d3a' },
+        vertLines: { color: 'rgba(255,255,255,0.05)' },
+        horzLines: { color: 'rgba(255,255,255,0.05)' },
       },
     });
 

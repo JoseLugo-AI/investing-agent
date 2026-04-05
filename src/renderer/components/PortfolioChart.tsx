@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { api } from '../api';
 import { PORTFOLIO_PERIODS } from '@shared/constants';
 import type { PortfolioHistory } from '../types';
@@ -12,6 +12,40 @@ function toChartData(history: PortfolioHistory): ChartPoint[] {
     equity: history.equity[i],
     pl: history.profit_loss[i],
   }));
+}
+
+function formatDollar(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function formatCompact(value: number): string {
+  if (value >= 1000) {
+    return `$${(value / 1000).toFixed(0)}k`;
+  }
+  return `$${value.toFixed(0)}`;
+}
+
+function CustomTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  const equity = payload[0]?.value ?? 0;
+  const point = payload[0]?.payload as ChartPoint | undefined;
+  const pl = point?.pl ?? 0;
+  const isPositive = pl >= 0;
+
+  return (
+    <div className="portfolio-tooltip">
+      <div className="portfolio-tooltip-date">{label}</div>
+      <div className="portfolio-tooltip-equity">{formatDollar(equity)}</div>
+      <div className={`portfolio-tooltip-pl ${isPositive ? 'positive' : 'negative'}`}>
+        {isPositive ? '+' : ''}{formatDollar(pl)} P&L
+      </div>
+    </div>
+  );
 }
 
 const TIMEFRAME_MAP: Record<string, string> = {
@@ -29,6 +63,8 @@ export function PortfolioChart(): React.ReactElement {
   }, [period]);
 
   const isPositive = data.length > 0 && data[data.length - 1].pl >= 0;
+  const lineColor = isPositive ? '#10b981' : '#ef4444';
+  const gradientId = 'portfolioGradient';
 
   return (
     <div className="portfolio-chart">
@@ -43,13 +79,42 @@ export function PortfolioChart(): React.ReactElement {
         </div>
       </div>
       <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#2a2d3a" />
-          <XAxis dataKey="date" tick={{ fill: '#8b8fa3', fontSize: 10 }} />
-          <YAxis tick={{ fill: '#8b8fa3', fontSize: 10 }} domain={['auto', 'auto']} />
-          <Tooltip contentStyle={{ background: '#1a1d27', border: '1px solid #2a2d3a', color: '#e1e4ea' }} />
-          <Line type="monotone" dataKey="equity" stroke={isPositive ? '#22c55e' : '#ef4444'} dot={false} strokeWidth={2} />
-        </LineChart>
+        <AreaChart data={data}>
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={lineColor} stopOpacity={0.25} />
+              <stop offset="100%" stopColor={lineColor} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+          <XAxis
+            dataKey="date"
+            tick={{ fill: '#6b7280', fontSize: 10 }}
+            axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
+            tickLine={false}
+          />
+          <YAxis
+            tick={{ fill: '#6b7280', fontSize: 10 }}
+            axisLine={false}
+            tickLine={false}
+            tickFormatter={formatCompact}
+            domain={['auto', 'auto']}
+            width={55}
+          />
+          <Tooltip
+            content={<CustomTooltip />}
+            cursor={{ stroke: 'rgba(255,255,255,0.15)', strokeWidth: 1 }}
+          />
+          <Area
+            type="monotone"
+            dataKey="equity"
+            stroke={lineColor}
+            strokeWidth={2}
+            fill={`url(#${gradientId})`}
+            dot={false}
+            activeDot={{ r: 4, fill: lineColor, stroke: '#0a0d14', strokeWidth: 2 }}
+          />
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );
