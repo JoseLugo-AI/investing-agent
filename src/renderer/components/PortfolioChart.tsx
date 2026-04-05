@@ -4,13 +4,25 @@ import { api } from '../api';
 import { PORTFOLIO_PERIODS } from '@shared/constants';
 import type { PortfolioHistory } from '../types';
 
-interface ChartPoint { date: string; equity: number; pl: number; }
+interface ChartPoint { date: string; equity: number; pl: number; ts: number; }
 
-function toChartData(history: PortfolioHistory): ChartPoint[] {
+function formatTimestamp(ts: number, period: string): string {
+  const d = new Date(ts * 1000);
+  if (period === '1D') {
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  if (period === '1W') {
+    return d.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+  return d.toLocaleDateString();
+}
+
+function toChartData(history: PortfolioHistory, period: string): ChartPoint[] {
   return history.timestamp.map((ts, i) => ({
-    date: new Date(ts * 1000).toLocaleDateString(),
+    date: formatTimestamp(ts, period),
     equity: history.equity[i],
     pl: history.profit_loss[i],
+    ts,
   }));
 }
 
@@ -58,7 +70,7 @@ export function PortfolioChart(): React.ReactElement {
 
   useEffect(() => {
     api.getPortfolioHistory(period, TIMEFRAME_MAP[period])
-      .then((h) => setData(toChartData(h)))
+      .then((h) => setData(toChartData(h, period)))
       .catch(() => setData([]));
   }, [period]);
 
