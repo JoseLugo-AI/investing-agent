@@ -33,15 +33,20 @@ const CLAUDE_CALL_DELAY_MS = 2000;
  * Market hours: 9:30 AM - 4:00 PM ET, Monday-Friday.
  */
 export function isMarketOpen(now: Date = new Date()): boolean {
-  // Convert to ET
-  const etStr = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
-  const et = new Date(etStr);
+  // Extract ET time components directly using Intl formatter
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    hour12: false,
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const parts = fmt.formatToParts(now);
+  const weekday = parts.find(p => p.type === 'weekday')!.value;
+  if (weekday === 'Sat' || weekday === 'Sun') return false; // weekend
 
-  const day = et.getDay();
-  if (day === 0 || day === 6) return false; // weekend
-
-  const hours = et.getHours();
-  const minutes = et.getMinutes();
+  const hours = parseInt(parts.find(p => p.type === 'hour')!.value, 10);
+  const minutes = parseInt(parts.find(p => p.type === 'minute')!.value, 10);
   const timeMinutes = hours * 60 + minutes;
 
   // 9:30 AM = 570 min, 4:00 PM = 960 min
