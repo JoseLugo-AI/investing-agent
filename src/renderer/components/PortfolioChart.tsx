@@ -9,7 +9,7 @@ interface ChartPoint { date: string; equity: number; pl: number; ts: number; }
 function formatTimestamp(ts: number, period: string): string {
   const d = new Date(ts * 1000);
   if (period === '1D') {
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
   if (period === '1W') {
     return d.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
