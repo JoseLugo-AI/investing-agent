@@ -1,6 +1,6 @@
 {
   "name": "investing-agent",
-  "version": "2.2.0",
+  "version": "3.0.0",
   "description": "AI-powered investing dashboard with Alpaca paper trading",
   "main": "dist/main/index.js",
   "scripts": {
