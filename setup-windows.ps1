@@ -64,7 +64,7 @@ networkingMode=mirrored
 # --- Step 2: Get Alpaca keys ---
 Write-Host ""
 Write-Host "[2/5] Alpaca Paper Trading Keys" -ForegroundColor Yellow
-Write-Host "  Your dad will give you these. Ask him!" -ForegroundColor White
+Write-Host "  Get these from your Alpaca dashboard: https://app.alpaca.markets/paper/dashboard/overview > API Keys" -ForegroundColor White
 Write-Host ""
 
 $alpacaKeyId = Read-Host "  Enter Alpaca Key ID (starts with PK)"
