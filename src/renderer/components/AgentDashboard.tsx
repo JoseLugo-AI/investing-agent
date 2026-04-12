@@ -4,6 +4,7 @@ import type { AgentStatus, AgentActivity, AgentTrade } from '../types';
 import { AgentTierAllocation } from './AgentTierAllocation';
 import { AgentActivityFeed } from './AgentActivityFeed';
 import { AgentTradeLog } from './AgentTradeLog';
+import { FearGreedIndicator } from './FearGreedIndicator';
 
 const POLL_INTERVAL = 5000;
 
@@ -82,6 +83,9 @@ export function AgentDashboard(): React.ReactElement {
       </div>
 
       {error && <div className="agent-error">{error}</div>}
+
+      {/* Fear & Greed Index (crypto strategy signal) */}
+      <FearGreedIndicator />
 
       {/* Tier Allocations */}
       <div className="dashboard-panel">

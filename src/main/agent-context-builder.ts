@@ -49,6 +49,12 @@ Balance conviction with diversification. Take profits at 10-15% gains, cut losse
   aggressive: `Active momentum trading. Look for high-volatility setups with above-average volume.
 Enter on breakouts with volume confirmation. Use tight stops (2-3%). Take quick profits (5-10%).
 Hold hours to days. Be willing to go to cash if no setups qualify. Speed matters.`,
+
+  jose_crypto: `Lazy crypto accumulation. Buy fear, hold conviction, trim greed. Daily timeframe only.
+BTC-heavy while dominance >55%. Only add ETH when BTC dominance drops.
+DCA into positions during extreme fear (F&G < 20). Pause buying during greed (F&G > 75).
+Trim 15% of positions during extreme greed (F&G > 90). Move to cash in crisis regime.
+This is NOT day trading. Target: 2-5 trades per month maximum. Let positions breathe.`,
 };
 
 /**

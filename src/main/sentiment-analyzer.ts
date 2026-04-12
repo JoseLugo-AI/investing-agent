@@ -154,6 +154,58 @@ function scoreToLabel(score: number): SentimentResult['label'] {
   return 'neutral';
 }
 
+// === Crypto-specific sentiment analysis ===
+
+const CRYPTO_SENTIMENT_PROMPT = `You are a crypto market sentiment analyst. Assess the current sentiment for a specific cryptocurrency based on your knowledge of recent events and market conditions.
+
+SYMBOL: {SYMBOL}
+CURRENT PRICE: ${'{PRICE}'}
+
+Analyze sentiment considering:
+1. Bitcoin ETF inflows/outflows (institutional demand signal)
+2. Regulatory developments (SEC, CFTC, global regulation)
+3. Macro environment (Fed rates, dollar strength, risk appetite)
+4. On-chain narrative (halving cycle position, whale accumulation/distribution)
+5. Exchange flows (large inflows = sell pressure, outflows = accumulation)
+6. Geopolitical risks affecting crypto markets
+7. Major protocol upgrades or ecosystem developments
+8. Retail sentiment (social media, Google Trends)
+
+RESPOND WITH ONLY THIS JSON:
+{
+  "score": <number from -1.0 to 1.0>,
+  "label": "very_bearish" | "bearish" | "neutral" | "bullish" | "very_bullish",
+  "reasoning": "2-3 sentence summary of the crypto sentiment picture",
+  "catalysts": ["upcoming event 1", "upcoming event 2"],
+  "news_age": "fresh" | "stale"
+}
+
+Score guide:
+- 0.7 to 1.0: Very bullish — strong ETF inflows, regulatory clarity, institutional adoption
+- 0.3 to 0.7: Bullish — positive macro, accumulation signals, ecosystem growth
+- -0.3 to 0.3: Neutral — mixed signals, consolidation
+- -0.7 to -0.3: Bearish — outflows, regulatory headwinds, macro risk-off
+- -1.0 to -0.7: Very bearish — capitulation, exchange collapses, severe regulatory action`;
+
+export async function analyzeCryptoSentiment(symbol: string, currentPrice: number): Promise<SentimentResult> {
+  const prompt = CRYPTO_SENTIMENT_PROMPT
+    .replace(/{SYMBOL}/g, symbol)
+    .replace('{PRICE}', currentPrice.toFixed(2));
+
+  try {
+    const raw = await runClaude(prompt);
+    return parseSentimentResponse(raw);
+  } catch (err: any) {
+    return {
+      score: 0,
+      label: 'neutral',
+      reasoning: `Crypto sentiment analysis failed: ${err.message}`,
+      catalysts: [],
+      newsAge: 'stale',
+    };
+  }
+}
+
 /**
  * Format sentiment for inclusion in Claude trading prompts.
  */

@@ -10,8 +10,10 @@
  */
 
 import type { AlpacaClient } from './alpaca-client';
+import { isCrypto } from './alpaca-client';
 import type { AgentStore } from './agent-store';
 import { calculateATR } from './technical-indicators';
+import { CRYPTO_ATR_STOP_MULTIPLIER } from '../shared/risk-constants';
 
 const MONITOR_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -55,14 +57,17 @@ export function createPositionMonitor(
         const symbol = pos.symbol;
         const currentPrice = parseFloat(pos.current_price);
         const entryPrice = parseFloat(pos.avg_entry_price);
-        const qty = parseInt(pos.qty, 10);
+        const qty = isCrypto(symbol) ? parseFloat(pos.qty) : parseInt(pos.qty, 10);
+        const isCryptoAsset = isCrypto(symbol);
 
         if (qty <= 0 || currentPrice <= 0) continue;
 
-        // Fetch bars for ATR calculation
+        // Fetch bars for ATR calculation (crypto uses different endpoint)
         let bars;
         try {
-          bars = await alpaca.getBars(symbol, '1Day', 30);
+          bars = isCryptoAsset
+            ? await alpaca.getCryptoBars(symbol, '1Day', 30)
+            : await alpaca.getBars(symbol, '1Day', 30);
         } catch {
           continue; // skip if can't get bars
         }
@@ -73,14 +78,18 @@ export function createPositionMonitor(
         const atr14 = calculateATR(bars, 14);
         if (atr14 === null) continue;
 
-        // Hard stop: entry - 2 * ATR(14)
-        const hardStop = entryPrice - 2 * atr14;
+        // ATR multiplier: crypto uses wider stops (3x) vs equity (2x)
+        const atrMult = isCryptoAsset ? CRYPTO_ATR_STOP_MULTIPLIER : 2;
 
-        // Trailing stop: highest high(22) - 3 * ATR(22)
+        // Hard stop: entry - atrMult * ATR(14)
+        const hardStop = entryPrice - atrMult * atr14;
+
+        // Trailing stop: highest high(22) - (atrMult+1) * ATR(22)
         const recent22 = bars.slice(-22);
         const highestHigh = Math.max(...recent22.map(b => b.h));
         const atr22 = calculateATR(bars, Math.min(22, bars.length - 1)) || atr14;
-        const trailingStop = highestHigh - 3 * atr22;
+        const trailingStopMult = isCryptoAsset ? atrMult + 1 : 3; // crypto: 4x ATR trailing, equity: 3x
+        const trailingStop = highestHigh - trailingStopMult * atr22;
 
         // Use the higher of the two stops (more protective)
         const effectiveStop = Math.max(hardStop, trailingStop);
@@ -113,7 +122,7 @@ export function createPositionMonitor(
               qty,
               side: 'sell',
               type: 'market',
-              time_in_force: 'day',
+              time_in_force: isCryptoAsset ? 'gtc' : 'day',
             });
           } catch (err: any) {
             // Order failed — allow retry on next cycle

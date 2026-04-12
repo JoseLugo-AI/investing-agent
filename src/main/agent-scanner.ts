@@ -1,4 +1,5 @@
 import type { AlpacaClient } from './alpaca-client';
+import { isCrypto } from './alpaca-client';
 import type { TierConfig, TierId } from '../shared/agent-types';
 
 export interface ScanCandidate {
@@ -42,7 +43,9 @@ export async function scanTier(
     const batch = allSymbols.slice(i, i + batchSize);
     const results = await Promise.allSettled(
       batch.map(async (symbol) => {
-        const bars = await alpaca.getBars(symbol, '1Day', 20);
+        const bars = isCrypto(symbol)
+          ? await alpaca.getCryptoBars(symbol, '1Day', 20)
+          : await alpaca.getBars(symbol, '1Day', 20);
         if (bars.length < 2) return null;
 
         const latest = bars[bars.length - 1];
@@ -113,6 +116,14 @@ function rankCandidates(tierId: TierId, candidates: ScanCandidate[]): ScanCandid
         const scoreA = Math.abs(a.changePercent) * (a.volume / Math.max(a.avgVolume, 1));
         const scoreB = Math.abs(b.changePercent) * (b.volume / Math.max(b.avgVolume, 1));
         return scoreB - scoreA; // highest volatility-volume combo first
+      });
+
+    case 'jose_crypto':
+      // Crypto: rank by volume ratio (institutional/whale activity)
+      return [...candidates].sort((a, b) => {
+        const ratioA = a.avgVolume > 0 ? a.volume / a.avgVolume : 0;
+        const ratioB = b.avgVolume > 0 ? b.volume / b.avgVolume : 0;
+        return ratioB - ratioA;
       });
 
     default:

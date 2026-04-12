@@ -43,14 +43,14 @@ describe('Short Engine', () => {
       expect(result.approved).toBe(true);
     });
 
-    it('rejects when RSI(2) below 90', () => {
-      const result = screenShortEntry(makeScreenInput({ rsi2: 85 }));
+    it('rejects when RSI(2) below 80', () => {
+      const result = screenShortEntry(makeScreenInput({ rsi2: 75 }));
       expect(result.approved).toBe(false);
-      expect(result.rejections).toContain('RSI(2) must be > 90');
+      expect(result.rejections).toContain('RSI(2) must be > 80');
     });
 
-    it('rejects when RSI(2) exactly 90', () => {
-      const result = screenShortEntry(makeScreenInput({ rsi2: 90 }));
+    it('rejects when RSI(2) exactly 80', () => {
+      const result = screenShortEntry(makeScreenInput({ rsi2: 80 }));
       expect(result.approved).toBe(false);
     });
 

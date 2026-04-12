@@ -84,7 +84,15 @@ export function createAgentStore(dbPath: string): AgentStore {
       target_pct REAL NOT NULL,
       scan_interval_min INTEGER NOT NULL,
       symbols TEXT NOT NULL,
+      asset_class TEXT NOT NULL DEFAULT 'equity',
       updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS fear_greed_cache (
+      date TEXT PRIMARY KEY,
+      value INTEGER NOT NULL,
+      label TEXT NOT NULL,
+      fetched_at TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS agent_scans (
@@ -149,17 +157,47 @@ export function createAgentStore(dbPath: string): AgentStore {
     CREATE INDEX IF NOT EXISTS idx_scans_tier ON agent_scans(tier_id, started_at DESC);
   `);
 
+  // Migration: add asset_class column if missing
+  const tierCols = db.prepare("PRAGMA table_info(agent_tiers)").all() as { name: string }[];
+  if (!tierCols.some(c => c.name === 'asset_class')) {
+    db.exec("ALTER TABLE agent_tiers ADD COLUMN asset_class TEXT NOT NULL DEFAULT 'equity'");
+  }
+
+  // Migration: create fear_greed_cache if missing
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS fear_greed_cache (
+      date TEXT PRIMARY KEY,
+      value INTEGER NOT NULL,
+      label TEXT NOT NULL,
+      fetched_at TEXT NOT NULL
+    )
+  `);
+
   // Seed default tiers if empty
   const tierCount = db.prepare('SELECT COUNT(*) as cnt FROM agent_tiers').get() as { cnt: number };
   if (tierCount.cnt === 0) {
     const insertTier = db.prepare(
-      'INSERT INTO agent_tiers (id, label, target_pct, scan_interval_min, symbols, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO agent_tiers (id, label, target_pct, scan_interval_min, symbols, asset_class, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
     const now = new Date().toISOString();
     for (const tier of DEFAULT_TIERS) {
-      insertTier.run(tier.id, tier.label, tier.target_pct, tier.scan_interval_min, JSON.stringify(tier.symbols), now);
+      insertTier.run(tier.id, tier.label, tier.target_pct, tier.scan_interval_min, JSON.stringify(tier.symbols), tier.asset_class, now);
     }
   }
+
+  // Seed jose_crypto tier if missing (for existing databases)
+  const joseCryptoExists = db.prepare("SELECT COUNT(*) as cnt FROM agent_tiers WHERE id = 'jose_crypto'").get() as { cnt: number };
+  if (joseCryptoExists.cnt === 0) {
+    const cryptoTier = DEFAULT_TIERS.find(t => t.id === 'jose_crypto');
+    if (cryptoTier) {
+      db.prepare(
+        'INSERT INTO agent_tiers (id, label, target_pct, scan_interval_min, symbols, asset_class, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      ).run(cryptoTier.id, cryptoTier.label, cryptoTier.target_pct, cryptoTier.scan_interval_min, JSON.stringify(cryptoTier.symbols), cryptoTier.asset_class, new Date().toISOString());
+    }
+  }
+
+  // Ensure jose_crypto has correct asset_class (fixes migration from equity default)
+  db.prepare("UPDATE agent_tiers SET asset_class = 'crypto' WHERE id = 'jose_crypto' AND asset_class = 'equity'").run();
 
   // Seed default config if empty
   const configCount = db.prepare('SELECT COUNT(*) as cnt FROM agent_config').get() as { cnt: number };
@@ -212,6 +250,7 @@ export function createAgentStore(dbPath: string): AgentStore {
     return {
       ...row,
       symbols: JSON.parse(row.symbols),
+      asset_class: row.asset_class || 'equity',
     };
   }
 

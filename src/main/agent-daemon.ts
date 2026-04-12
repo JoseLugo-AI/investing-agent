@@ -1,19 +1,22 @@
 import type { AlpacaClient } from './alpaca-client';
+import { isCrypto } from './alpaca-client';
 import type { AgentStore } from './agent-store';
 import type { TierId, TierConfig, TierAllocation, AgentAnalysisResult, ShortPosition } from '../shared/agent-types';
 import { scanTier } from './agent-scanner';
 import { buildAgentPrompt } from './agent-context-builder';
-import { executeDecision, executeShortEntry, executeShortExit } from './agent-executor';
+import { executeDecision, executeShortEntry, executeShortExit, executeCryptoDCA, executeCryptoTrim } from './agent-executor';
 import { runClaude } from './run-claude';
 import { parseAnalysisResponse } from './claude-analyzer';
 import { checkDailyLoss, checkDrawdown, validateShortOrder } from './risk-engine';
 import { calculateAllIndicators, calculateRSI, sma } from './technical-indicators';
 import { detectRegime, type RegimeResult } from './regime-detector';
-import { analyzeSentiment } from './sentiment-analyzer';
+import { analyzeSentiment, analyzeCryptoSentiment } from './sentiment-analyzer';
 import { evaluateStrategy } from './strategy-engine';
+import { evaluateCryptoStrategy, formatCryptoSignalForLog } from './crypto-strategy';
+import { fetchFearGreedIndex } from './fear-greed';
 import { createPositionMonitor } from './position-monitor';
 import { screenShortEntry, checkShortExit, checkShortRiskLimits, calculateShortSize } from './short-engine';
-import { MAX_SHORT_POSITION_PCT } from '../shared/risk-constants';
+import { MAX_SHORT_POSITION_PCT, CRYPTO_DAILY_LOSS_LIMIT_PCT } from '../shared/risk-constants';
 
 export interface AgentDaemon {
   start(): void;
@@ -103,6 +106,7 @@ export function calculateTierAllocations(
       current_value: currentValue,
       available: Math.max(0, targetValue - currentValue),
       position_count: tierPositions.length,
+      asset_class: tier.asset_class || 'equity',
     };
   });
 }
@@ -425,7 +429,8 @@ export function createAgentDaemon(
     if (!running || scanningTiers.has(tier.id)) return;
 
     // Recurring scans check market hours; initial scans always run
-    if (!isInitial && !isMarketOpen()) {
+    // Crypto tiers trade 24/7 — bypass market hours check
+    if (!isInitial && tier.asset_class !== 'crypto' && !isMarketOpen()) {
       store.logActivity('skip', `Market closed — skipping ${tier.label} scan`, tier.id);
       return;
     }
@@ -463,6 +468,12 @@ export function createAgentDaemon(
       const tiers = store.getTiers();
       const allocations = calculateTierAllocations(tiers, positions, portfolioValue, store);
       const tierAllocation = allocations.find(a => a.id === tier.id)!;
+
+      // === CRYPTO TIER: Use crypto strategy engine ===
+      if (tier.asset_class === 'crypto') {
+        await runCryptoScanCycle(tier, account, positions, portfolioValue, tierAllocation, scanId);
+        return; // crypto has its own flow
+      }
 
       // Detect market regime using broad market index (VOO)
       let regime: RegimeResult;
@@ -605,6 +616,148 @@ export function createAgentDaemon(
     } catch (err: any) {
       store.failScan(scanId, err.message);
       store.logActivity('error', `${tier.label} scan failed: ${err.message}`, tier.id);
+    } finally {
+      scanningTiers.delete(tier.id);
+    }
+  }
+
+  /**
+   * Run crypto scan cycle using Fear & Greed + regime + sentiment strategy.
+   * This is the "lazy agent" — runs once daily, makes 0-2 trades.
+   */
+  async function runCryptoScanCycle(
+    tier: TierConfig,
+    account: any,
+    positions: any[],
+    portfolioValue: number,
+    tierAllocation: TierAllocation,
+    scanId: number
+  ): Promise<void> {
+    try {
+      // 1. Fetch Fear & Greed Index
+      const fearGreed = await fetchFearGreedIndex();
+      store.logActivity('analysis', `Fear & Greed: ${fearGreed.value} (${fearGreed.label})`, tier.id);
+
+      // 2. Detect regime using BTC/USD (not VOO)
+      let regime: RegimeResult;
+      try {
+        const btcBars = await alpaca.getCryptoBars('BTC/USD', '1Day', 250);
+        regime = detectRegime(btcBars);
+        store.logActivity('analysis', `Crypto regime: ${regime.regime.toUpperCase()} (${regime.confidence})`, tier.id);
+      } catch {
+        regime = { regime: 'sideways', confidence: 'low', description: 'Could not detect crypto regime', positionSizeMultiplier: 0.6, stopMultiplier: 1.2, strategy: 'mean_reversion' };
+      }
+
+      // 3. Get BTC sentiment
+      await sleep(CLAUDE_CALL_DELAY_MS);
+      let sentiment;
+      const cached = store.getCachedSentiment('BTC/USD', 24 * 60 * 60 * 1000); // 24h cache for crypto
+      if (cached) {
+        sentiment = JSON.parse(cached);
+      } else {
+        const btcSnapshot = await alpaca.getCryptoSnapshot('BTC/USD');
+        const btcPrice = btcSnapshot?.DailyBar?.Close ?? btcSnapshot?.LatestTrade?.Price ?? 0;
+        sentiment = await analyzeCryptoSentiment('BTC/USD', btcPrice);
+        if (!(sentiment as any)._parseFailed) {
+          store.cacheSentiment('BTC/USD', JSON.stringify(sentiment));
+        }
+      }
+
+      // 4. Approximate BTC dominance from BTC vs ETH relative performance
+      let btcDominanceApprox = 0.59; // default to current ~59%
+      try {
+        const btcBars = await alpaca.getCryptoBars('BTC/USD', '1Day', 30);
+        const ethBars = await alpaca.getCryptoBars('ETH/USD', '1Day', 30);
+        if (btcBars.length >= 2 && ethBars.length >= 2) {
+          const btcChange = (btcBars[btcBars.length - 1].c - btcBars[0].c) / btcBars[0].c;
+          const ethChange = (ethBars[ethBars.length - 1].c - ethBars[0].c) / ethBars[0].c;
+          // If BTC outperforms ETH, dominance is likely rising
+          btcDominanceApprox = btcChange > ethChange ? 0.60 : 0.52;
+        }
+      } catch { /* use default */ }
+
+      // 5. Check current crypto positions
+      const cryptoPositions = positions.filter((p: any) => isCrypto(p.symbol));
+      const btcPosition = cryptoPositions.find((p: any) => p.symbol === 'BTC/USD');
+      const ethPosition = cryptoPositions.find((p: any) => p.symbol === 'ETH/USD');
+
+      // 6. Run crypto strategy
+      const signals = evaluateCryptoStrategy({
+        fearGreed,
+        regime,
+        sentiment,
+        btcDominanceApprox,
+        hasBtcPosition: !!btcPosition,
+        hasEthPosition: !!ethPosition,
+        btcPositionValue: btcPosition ? parseFloat(btcPosition.market_value || '0') : 0,
+        ethPositionValue: ethPosition ? parseFloat(ethPosition.market_value || '0') : 0,
+        cryptoBudget: tierAllocation.available + tierAllocation.current_value,
+      });
+
+      let opportunities = 0;
+
+      // 7. Execute signals
+      for (const signal of signals) {
+        store.logActivity('analysis', formatCryptoSignalForLog(signal), tier.id, signal.symbol);
+
+        if (signal.action === 'dca_buy' && signal.sizePct > 0) {
+          opportunities++;
+          const budget = tierAllocation.available + tierAllocation.current_value;
+          const buyAmount = budget * signal.sizePct;
+
+          const analysisId = store.saveAnalysis({
+            scanId,
+            tierId: tier.id,
+            symbol: signal.symbol,
+            recommendation: 'buy',
+            confidence: signal.confidence,
+            reasoning: signal.reasoning.join('; '),
+            risks: ['Crypto volatility', 'Further drawdown possible'],
+            targetAllocationPct: signal.sizePct,
+            urgency: signal.confidence === 'high' ? 'immediate' : 'soon',
+            rawResponse: null,
+          });
+
+          const freshAccount = await alpaca.getAccount();
+          const freshPositions = await alpaca.getPositions();
+          await executeCryptoDCA(signal.symbol, buyAmount, analysisId, tier.id, {
+            alpaca,
+            store,
+            account: freshAccount,
+            positions: freshPositions,
+          });
+        } else if (signal.action === 'trim' && signal.sizePct > 0) {
+          opportunities++;
+          const position = cryptoPositions.find((p: any) => p.symbol === signal.symbol);
+          if (position) {
+            const analysisId = store.saveAnalysis({
+              scanId,
+              tierId: tier.id,
+              symbol: signal.symbol,
+              recommendation: 'sell',
+              confidence: signal.confidence,
+              reasoning: signal.reasoning.join('; '),
+              risks: ['May miss further upside'],
+              targetAllocationPct: signal.sizePct,
+              urgency: 'soon',
+              rawResponse: null,
+            });
+
+            const trimQty = parseFloat(position.qty) * signal.sizePct;
+            await executeCryptoTrim(signal.symbol, trimQty, analysisId, tier.id, {
+              alpaca,
+              store,
+            });
+          }
+        }
+      }
+
+      store.completeScan(scanId, tier.symbols.length, opportunities);
+      store.logActivity('scan_complete', `${tier.label} scan complete: ${tier.symbols.length} symbols, ${opportunities} opportunities`, tier.id);
+
+    } catch (err: any) {
+      store.failScan(scanId, err.message);
+      store.logActivity('error', `${tier.label} crypto scan failed: ${err.message}`, tier.id);
     } finally {
       scanningTiers.delete(tier.id);
     }

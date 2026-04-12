@@ -3,8 +3,8 @@ import { buildAgentPrompt } from '../agent-context-builder';
 
 const baseParams = {
   symbol: 'NVDA',
-  tier: { id: 'moderate' as const, label: 'Moderate', target_pct: 0.35, scan_interval_min: 120, symbols: ['NVDA', 'AMZN'], updated_at: '2026-04-01' },
-  tierAllocation: { id: 'moderate' as const, label: 'Moderate', target_pct: 0.35, target_value: 35000, current_value: 20000, available: 15000, position_count: 3 },
+  tier: { id: 'moderate' as const, label: 'Moderate', target_pct: 0.35, scan_interval_min: 120, symbols: ['NVDA', 'AMZN'], asset_class: 'equity' as const, updated_at: '2026-04-01' },
+  tierAllocation: { id: 'moderate' as const, label: 'Moderate', target_pct: 0.35, target_value: 35000, current_value: 20000, available: 15000, position_count: 3, asset_class: 'equity' as const },
   position: null,
   account: { portfolio_value: '100000', equity: '100000', cash: '50000', last_equity: '100000' },
   allPositions: [],

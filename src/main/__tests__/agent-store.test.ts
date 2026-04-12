@@ -49,11 +49,12 @@ describe('AgentStore', () => {
   });
 
   describe('tiers', () => {
-    it('seeds 3 default tiers', () => {
+    it('seeds default tiers including jose_crypto', () => {
       makeStore();
       const tiers = store.getTiers();
-      expect(tiers).toHaveLength(3);
-      expect(tiers.map(t => t.id).sort()).toEqual(['aggressive', 'conservative', 'moderate']);
+      expect(tiers).toHaveLength(4);
+      expect(tiers.map(t => t.id).sort()).toEqual(['aggressive', 'conservative', 'jose_crypto', 'moderate']);
+      expect(tiers.find(t => t.id === 'jose_crypto')!.asset_class).toBe('crypto');
     });
 
     it('gets a single tier by id', () => {

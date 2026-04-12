@@ -311,6 +311,131 @@ export async function executeShortExit(
   }
 }
 
+// === Crypto execution functions ===
+
+interface CryptoExecutionContext {
+  alpaca: AlpacaClient;
+  store: AgentStore;
+  account?: any;
+  positions?: any[];
+}
+
+/**
+ * Execute a crypto DCA buy order.
+ * Uses 'gtc' time_in_force (crypto is 24/7) and supports fractional qty.
+ */
+export async function executeCryptoDCA(
+  symbol: string,
+  buyAmountDollars: number,
+  analysisId: number,
+  tierId: TierId,
+  ctx: CryptoExecutionContext
+): Promise<ExecutionResult> {
+  const { alpaca, store } = ctx;
+
+  try {
+    // Get current price for qty calculation
+    const snapshot = await alpaca.getCryptoSnapshot(symbol);
+    const currentPrice = snapshot?.LatestTrade?.Price ?? snapshot?.DailyBar?.Close;
+    if (!currentPrice || currentPrice <= 0) {
+      const result: ExecutionResult = {
+        action: 'skip',
+        reason: `Could not get ${symbol} price for DCA`,
+        qty: null, price: null, orderId: null, riskCheck: null,
+      };
+      logDecision(store, analysisId, tierId, symbol, result);
+      return result;
+    }
+
+    // Fractional qty for crypto
+    const qty = parseFloat((buyAmountDollars / currentPrice).toFixed(6));
+    if (qty <= 0 || buyAmountDollars < 1) {
+      const result: ExecutionResult = {
+        action: 'skip',
+        reason: `DCA amount too small ($${buyAmountDollars.toFixed(2)})`,
+        qty: null, price: null, orderId: null, riskCheck: null,
+      };
+      logDecision(store, analysisId, tierId, symbol, result);
+      return result;
+    }
+
+    const order = await alpaca.createOrder({
+      symbol,
+      qty,
+      side: 'buy',
+      type: 'market',
+      time_in_force: 'gtc', // crypto is 24/7
+    });
+
+    const result: ExecutionResult = {
+      action: 'buy',
+      reason: `Crypto DCA buy: $${buyAmountDollars.toFixed(2)} of ${symbol}`,
+      qty,
+      price: currentPrice,
+      orderId: order.id,
+      riskCheck: null,
+    };
+    logDecision(store, analysisId, tierId, symbol, result);
+    store.logActivity('trade', `CRYPTO DCA BUY ${qty.toFixed(6)} ${symbol} @ ~$${currentPrice.toFixed(2)} ($${buyAmountDollars.toFixed(0)})`, tierId, symbol);
+    return result;
+  } catch (err: any) {
+    const result: ExecutionResult = {
+      action: 'skip',
+      reason: `Crypto DCA order failed: ${err.message}`,
+      qty: null, price: null, orderId: null, riskCheck: null,
+    };
+    logDecision(store, analysisId, tierId, symbol, result);
+    store.logActivity('error', `Crypto DCA failed for ${symbol}: ${err.message}`, tierId, symbol);
+    return result;
+  }
+}
+
+/**
+ * Trim a crypto position (sell a percentage during extreme greed).
+ */
+export async function executeCryptoTrim(
+  symbol: string,
+  trimQty: number,
+  analysisId: number,
+  tierId: TierId,
+  ctx: Pick<CryptoExecutionContext, 'alpaca' | 'store'>
+): Promise<ExecutionResult> {
+  const { alpaca, store } = ctx;
+
+  try {
+    const qty = parseFloat(trimQty.toFixed(6));
+    if (qty <= 0) {
+      return { action: 'skip', reason: 'Trim qty is 0', qty: null, price: null, orderId: null, riskCheck: null };
+    }
+
+    const snapshot = await alpaca.getCryptoSnapshot(symbol);
+    const currentPrice = snapshot?.LatestTrade?.Price ?? snapshot?.DailyBar?.Close ?? 0;
+
+    const order = await alpaca.createOrder({
+      symbol,
+      qty,
+      side: 'sell',
+      type: 'market',
+      time_in_force: 'gtc',
+    });
+
+    const result: ExecutionResult = {
+      action: 'sell',
+      reason: `Crypto greed trim: ${qty.toFixed(6)} ${symbol}`,
+      qty,
+      price: currentPrice,
+      orderId: order.id,
+      riskCheck: null,
+    };
+    logDecision(store, analysisId, tierId, symbol, result);
+    store.logActivity('trade', `CRYPTO TRIM ${qty.toFixed(6)} ${symbol} @ ~$${currentPrice.toFixed(2)}`, tierId, symbol);
+    return result;
+  } catch (err: any) {
+    store.logActivity('error', `Crypto trim failed for ${symbol}: ${err.message}`, tierId, symbol);
+    return { action: 'skip', reason: `Trim failed: ${err.message}`, qty: null, price: null, orderId: null, riskCheck: null };
+  }
+}
+
 function logDecision(
   store: AgentStore,
   analysisId: number,

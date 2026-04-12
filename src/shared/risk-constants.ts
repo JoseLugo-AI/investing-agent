@@ -68,3 +68,45 @@ export const SHORT_RSI2_ENTRY = 80;
 
 /** RSI(2) threshold for short exit (take profit) — cover when below this */
 export const SHORT_RSI2_EXIT = 50;
+
+// --- Jose Crypto: Risk limits ---
+// Wider than equity because crypto is structurally more volatile (3-5% daily swings normal)
+
+/** Crypto daily loss limit — 8% (vs 3% equity) */
+export const CRYPTO_DAILY_LOSS_LIMIT_PCT = 0.08;
+
+/** Crypto max drawdown kill switch — 30% (vs 20% equity) */
+export const CRYPTO_MAX_DRAWDOWN_PCT = 0.30;
+
+/** Crypto ATR stop multiplier — wider stops (vs 2 for equity) */
+export const CRYPTO_ATR_STOP_MULTIPLIER = 3;
+
+/** DCA chunk: % of crypto budget per normal fear buy */
+export const CRYPTO_DCA_CHUNK_PCT = 0.10;
+
+/** DCA chunk: % of crypto budget per extreme fear buy (larger bites at historic lows) */
+export const CRYPTO_EXTREME_FEAR_CHUNK_PCT = 0.15;
+
+/** Trim: % of position to sell when greed is extreme */
+export const CRYPTO_GREED_TRIM_PCT = 0.15;
+
+/** Min crypto order qty (fractional) */
+export const CRYPTO_MIN_ORDER_VALUE = 1; // Alpaca minimum $1
+
+// --- Fear & Greed thresholds ---
+// Based on 7-year backtest: buying at extreme fear returned 1,145%
+
+/** Extreme fear — large DCA buy trigger */
+export const FNG_EXTREME_FEAR = 20;
+
+/** Fear — small DCA buy trigger (with sentiment confirmation) */
+export const FNG_FEAR = 35;
+
+/** Greed — pause buying, tighten stops */
+export const FNG_GREED = 75;
+
+/** Extreme greed — trim positions */
+export const FNG_EXTREME_GREED = 90;
+
+/** BTC dominance threshold: above this, BTC only; below, allow ETH */
+export const BTC_DOMINANCE_ALT_THRESHOLD = 0.55;

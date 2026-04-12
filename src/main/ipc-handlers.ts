@@ -96,7 +96,7 @@ export function createHandlers(dbPath?: string): Record<string, (...args: any[])
         c.getBars(symbol, '1Day', 20),
       ]);
       const position = positions.find((p: any) => p.symbol === symbol) || null;
-      return analyzePosition(claudeKey, symbol, position, account, bars);
+      return analyzePosition(symbol, position, account, bars);
     },
     'save-claude-key': async (_e: any, apiKey: string) => {
       saveClaudeKey(apiKey);

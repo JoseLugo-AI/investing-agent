@@ -1,6 +1,6 @@
 // === Tier Configuration ===
 
-export type TierId = 'conservative' | 'moderate' | 'aggressive';
+export type TierId = 'conservative' | 'moderate' | 'aggressive' | 'jose_crypto';
 
 export interface TierConfig {
   id: TierId;
@@ -8,6 +8,7 @@ export interface TierConfig {
   target_pct: number;
   scan_interval_min: number;
   symbols: string[];
+  asset_class: 'equity' | 'crypto';
   updated_at: string;
 }
 
@@ -19,6 +20,7 @@ export interface TierAllocation {
   current_value: number;
   available: number;
   position_count: number;
+  asset_class: 'equity' | 'crypto';
 }
 
 // === Scan Records ===
@@ -125,6 +127,7 @@ export const DEFAULT_TIERS: Omit<TierConfig, 'updated_at'>[] = [
     target_pct: 0.40,
     scan_interval_min: 390, // once at market open
     symbols: ['VOO', 'QQQ', 'VTI', 'BND', 'SCHD', 'VIG', 'AAPL', 'MSFT', 'JNJ', 'PG'],
+    asset_class: 'equity',
   },
   {
     id: 'moderate',
@@ -132,6 +135,7 @@ export const DEFAULT_TIERS: Omit<TierConfig, 'updated_at'>[] = [
     target_pct: 0.35,
     scan_interval_min: 120,
     symbols: ['NVDA', 'AMZN', 'GOOGL', 'META', 'CRM', 'ADBE', 'NOW', 'PANW', 'ANET', 'UBER'],
+    asset_class: 'equity',
   },
   {
     id: 'aggressive',
@@ -139,5 +143,14 @@ export const DEFAULT_TIERS: Omit<TierConfig, 'updated_at'>[] = [
     target_pct: 0.25,
     scan_interval_min: 60,
     symbols: ['SMCI', 'MSTR', 'COIN', 'PLTR', 'RKLB', 'IONQ', 'HOOD', 'SOFI', 'RIVN', 'LCID'],
+    asset_class: 'equity',
+  },
+  {
+    id: 'jose_crypto',
+    label: 'Jose Crypto',
+    target_pct: 1.0, // 100% of its own isolated crypto budget
+    scan_interval_min: 1440, // once per day
+    symbols: ['BTC/USD', 'ETH/USD'],
+    asset_class: 'crypto',
   },
 ];

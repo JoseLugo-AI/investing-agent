@@ -11,6 +11,8 @@ function makeBars(prices: number[]) {
 
 const mockAlpaca = {
   getBars: vi.fn(),
+  getCryptoBars: vi.fn(),
+  getCryptoSnapshot: vi.fn(),
   getAccount: vi.fn(),
   getPositions: vi.fn(),
   getOrders: vi.fn(),
@@ -19,6 +21,7 @@ const mockAlpaca = {
   getQuote: vi.fn(),
   getPortfolioHistory: vi.fn(),
   searchAssets: vi.fn(),
+  getAsset: vi.fn(),
   isPaper: true,
 };
 
@@ -29,6 +32,7 @@ describe('scanTier', () => {
     target_pct: 0.4,
     scan_interval_min: 390,
     symbols: ['VOO', 'QQQ', 'VTI'],
+    asset_class: 'equity',
     updated_at: '2026-04-01',
   };
 

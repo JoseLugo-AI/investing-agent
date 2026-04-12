@@ -76,6 +76,27 @@ export function startWebServer(): void {
     } catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
+  // --- Crypto Market Data ---
+  app.get('/api/crypto/bars/:symbol', async (req, res) => {
+    try {
+      const tf = (req.query.timeframe as string) || '1Day';
+      const limit = parseInt((req.query.limit as string) || '100', 10);
+      res.json(await client.getCryptoBars(req.params.symbol, tf, limit));
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.get('/api/crypto/snapshot/:symbol', async (req, res) => {
+    try { res.json(await client.getCryptoSnapshot(req.params.symbol)); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.get('/api/crypto/fear-greed', async (_req, res) => {
+    try {
+      const { fetchFearGreedIndex } = await import('./fear-greed');
+      res.json(await fetchFearGreedIndex());
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
   app.get('/api/quote/:symbol', async (req, res) => {
     try { res.json(await client.getQuote(req.params.symbol)); }
     catch (e: any) { res.status(500).json({ error: e.message }); }
@@ -242,10 +263,18 @@ export function startWebServer(): void {
     } catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
+  // --- Serve production dashboard (no Vite HMR needed) ---
+  const distPath = path.join(__dirname, '../../dist/renderer');
+  app.use(express.static(distPath));
+  // SPA fallback: serve index.html for non-API routes
+  app.get('/{*splat}', (_req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+
   // --- Server startup ---
   const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Investing Agent API running on http://0.0.0.0:${PORT}`);
-    console.log(`Dashboard: http://localhost:${PORT} (via Vite proxy)`);
+    console.log(`Investing Agent running on http://0.0.0.0:${PORT}`);
+    console.log(`Dashboard: http://localhost:${PORT}`);
     console.log(`Agent: ${agentDaemon.isRunning() ? 'RUNNING' : 'stopped'}`);
   });
 

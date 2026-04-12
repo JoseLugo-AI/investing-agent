@@ -32,9 +32,9 @@ describe('isMarketOpen', () => {
 
 describe('calculateTierAllocations', () => {
   const tiers: TierConfig[] = [
-    { id: 'conservative', label: 'Conservative', target_pct: 0.4, scan_interval_min: 390, symbols: ['VOO', 'QQQ'], updated_at: '' },
-    { id: 'moderate', label: 'Moderate', target_pct: 0.35, scan_interval_min: 120, symbols: ['NVDA', 'AMZN'], updated_at: '' },
-    { id: 'aggressive', label: 'Aggressive', target_pct: 0.25, scan_interval_min: 30, symbols: ['PLTR', 'COIN'], updated_at: '' },
+    { id: 'conservative', label: 'Conservative', target_pct: 0.4, scan_interval_min: 390, symbols: ['VOO', 'QQQ'], asset_class: 'equity', updated_at: '' },
+    { id: 'moderate', label: 'Moderate', target_pct: 0.35, scan_interval_min: 120, symbols: ['NVDA', 'AMZN'], asset_class: 'equity', updated_at: '' },
+    { id: 'aggressive', label: 'Aggressive', target_pct: 0.25, scan_interval_min: 30, symbols: ['PLTR', 'COIN'], asset_class: 'equity', updated_at: '' },
   ];
 
   const mockStore = {
